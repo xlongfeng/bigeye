@@ -4,4 +4,5 @@ KeyEventModel 1.0 KeyEventModel.qml
 Controller 1.0 Controller.qml
 Screenshot 1.0 Screenshot.qml
 ScreenRecorder 1.0 ScreenRecorder.qml
+ProcessModel 1.0 ProcessModel.qml
 

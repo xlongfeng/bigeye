@@ -50,9 +50,10 @@ class _RepeaterLoop(QThread):
 
 class Repeater(SingletonObject):
     dataArrived = pyqtSignal(bytearray, name='dataArrived')
-    disposed = pyqtSignal(QByteArray)
     snapshotArrived = pyqtSignal(QImage)
     videoFrameArrived = pyqtSignal(QImage)
+
+    _delegates = []
 
     _loop = None
     _context = None
@@ -67,9 +68,9 @@ class Repeater(SingletonObject):
     _datagram = QByteArray()
 
     _extendedDataBuffer = QByteArray()
-
-    ExtendedData = Enum('ExtendedData', "none snapshot videoframe")
-    _extendedDataFlag = ExtendedData.none
+    _extendedDataCategory = None
+    _extendedDataCompressed = False
+    _extendedDataSize = 0
 
     def __init__(self, parent=None):
         super(Repeater, self).__init__(parent)
@@ -97,6 +98,24 @@ class Repeater(SingletonObject):
             self._interface = handle.claimInterface(0)
             self.startReceive()
 
+    def register(self, delegate):
+        self._delegates.append(delegate)
+
+    def getRequestBlock(self):
+        block = QByteArray()
+        ostream = QDataStream(block, QIODevice.WriteOnly)
+        ostream.setVersion(QDataStream.Qt_4_8)
+        ostream.writeQString('Bigeye')
+        return block, ostream
+
+    def submitRequestBlock(self, block):
+        block = self._escape(block)
+        transfer = self._handle.getTransfer()
+        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
+        transfer.submit()
+        self._transfer_list.append(transfer)
+        self._loop.start()
+
     def getUSBContext(self):
         return self._context
 
@@ -110,7 +129,7 @@ class Repeater(SingletonObject):
         self._mutex.lock()
         start = 0
         while True:
-            if self._extendedDataFlag is not self.ExtendedData.none:
+            if self._extendedDataSize > 0:
                 size = self._extendedDataBuffer.size()
                 remainder = self._extendedDataSize - size
                 length = len(data) - start
@@ -119,28 +138,19 @@ class Repeater(SingletonObject):
                     start += (length + 1)
                     if self._extendedDataCompressed:
                         self._extendedDataBuffer = qUncompress(self._extendedDataBuffer)
-                    if self._extendedDataFlag is self.ExtendedData.snapshot:
-                        image = QImage(self._extendedDataBuffer, self._snapshotWidth,
-                                       self._snapshotHeight, QImage.Format_RGB16)
-                        self.snapshotArrived.emit(image)
-                    elif self._extendedDataFlag is self.ExtendedData.videoframe:
-                        image = QImage(self._extendedDataBuffer, self._videoFrameWidth,
-                                       self._videoFrameHeight, QImage.Format_RGB16)
-                        self.videoFrameArrived.emit(image)
-                    else:
-                        pass
-                    self._extendedDataFlag = self.ExtendedData.none
+                    self.onDisposedExtendedData()
+                    self._extendedDataSize = 0
                 else:
                     self._extendedDataBuffer.append(data[start:])
                     break
             else:
                 end = data.find(b'\x7e', start)
                 if end == 0:
-                    self.disposed.emit(self._datagram)
+                    self.onDisposed(self._datagram)
                     self._datagram.clear()
                 elif end > 0:
                     self._datagram.append(data[start:end])
-                    self.disposed.emit(self._datagram)
+                    self.onDisposed(self._datagram)
                     self._datagram.clear()
                 else:
                     self._datagram.append(data[start:])
@@ -162,12 +172,36 @@ class Repeater(SingletonObject):
         magic = istream.readQString()
         response = istream.readQString()
         if istream.status() == QDataStream.Ok:
-            if hasattr(self, response):
-                getattr(self, response)(istream)
+            if response == "extendedData":
+                self._extendedDataCategory = istream.readQString()
+                self._extendedDataCompressed = istream.readBool()
+                self._extendedDataSize = istream.readInt()
+                self._extendedDataBuffer.clear()
             else:
-                print("eeeeeeeeeeeee", response)
+                handled = False
+                for delegate in self._delegates:
+                    if hasattr(delegate, response):
+                        getattr(delegate, response)(istream)
+                        handled = True
+                        if istream.status() != QDataStream.Ok:
+                            print("eeeeeeeeeeebbbbbbbeeeeeeeeeeeeee")
+                        break
+                if not handled:
+                    print("Unhandled response:", response)
         else:
-            print("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+            print("onDisposed eeeeeeeeeeeeeee")
+
+    def onDisposedExtendedData(self):
+        for delegate in self._delegates:
+            extendedDataHandel = "onExtendedDataArrived"
+            handled = False
+            if hasattr(delegate, extendedDataHandel):
+                res = getattr(delegate, extendedDataHandel)(self._extendedDataCategory, self._extendedDataBuffer)
+                if res is True:
+                    handled = True
+                    break
+        if not handled:
+            print("Unhandled extended data:", self._extendedDataCategory)
 
     def receiveData(self, data):
         self.dataArrived.emit(data)
@@ -193,7 +227,6 @@ class Repeater(SingletonObject):
 
     def startReceive(self):
         self.dataArrived.connect(self.onDataArrived)
-        self.disposed.connect(self.onDisposed)
         transfer = self._handle.getTransfer()
         transfer.setBulk(self._in_ep, self._in_packet_size * 32, callback=self.receiveDataCallback, user_data=self)
         transfer.submit()
@@ -262,155 +295,11 @@ class Repeater(SingletonObject):
         self._transfer_list.append(transfer)
         self._loop.start()
 
-    def reqKeyEvent(self, code, down):
-        block = QByteArray()
-        ostream = QDataStream(block, QIODevice.WriteOnly)
-        ostream.setVersion(QDataStream.Qt_4_8)
-        ostream.writeQString('Bigeye')
-        ostream.writeQString('keyEvent')
-        ostream.writeInt32(code)
-        ostream.writeBool(down)
-
-        block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
-        transfer.submit()
-        self._transfer_list.append(transfer)
-        self._loop.start()
-
-    def reqSnapshot(self):
-        block = QByteArray()
-        ostream = QDataStream(block, QIODevice.WriteOnly)
-        ostream.setVersion(QDataStream.Qt_4_8)
-        ostream.writeQString('Bigeye')
-        ostream.writeQString('snapshot')
-
-        block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
-        transfer.submit()
-        self._transfer_list.append(transfer)
-        self._loop.start()
-
-    def respSnapshot(self, istream):
-        self._snapshotWidth = istream.readInt()
-        self._snapshotHeight = istream.readInt()
-        self._snapshotBitDepth = istream.readInt()
-        self._extendedDataCompressed = istream.readBool()
-        self._extendedDataSize = istream.readInt()
-        if istream.status() == QDataStream.Ok:
-            self._extendedDataFlag = self.ExtendedData.snapshot
-            self._extendedDataBuffer.clear()
-        else:
-            print("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-
-    def reqVideoFrame(self):
-        block = QByteArray()
-        ostream = QDataStream(block, QIODevice.WriteOnly)
-        ostream.setVersion(QDataStream.Qt_4_8)
-        ostream.writeQString('Bigeye')
-        ostream.writeQString('videoFrame')
-
-        block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
-        transfer.submit()
-        self._transfer_list.append(transfer)
-        self._loop.start()
-
-    def respVideoFrame(self, istream):
-        self._videoFrameWidth = istream.readInt()
-        self._videoFrameHeight = istream.readInt()
-        self._videoFrameBitDepth = istream.readInt()
-        self._extendedDataCompressed = istream.readBool()
-        self._extendedDataSize = istream.readInt()
-        if istream.status() == QDataStream.Ok:
-            self._extendedDataFlag = self.ExtendedData.videoframe
-            self._extendedDataBuffer.clear()
-        else:
-            print("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-
-    def reqExecuteProgram(self, program, arguments=[], detached=False):
-        block = QByteArray()
-        ostream = QDataStream(block, QIODevice.WriteOnly)
-        ostream.setVersion(QDataStream.Qt_4_8)
-        ostream.writeQString('Bigeye')
-        if detached:
-            ostream.writeQString('executeProgramDetached')
-        else:
-            ostream.writeQString('executeProgram')
-        ostream.writeQString(program)
-        ostream.writeQStringList(arguments)
-
-        block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
-        transfer.submit()
-        self._transfer_list.append(transfer)
-        self._loop.start()
-
-    def reqFileTransfer(self, src, dst, isPut=False):
-        block = QByteArray()
-        ostream = QDataStream(block, QIODevice.WriteOnly)
-        ostream.setVersion(QDataStream.Qt_4_8)
-        ostream.writeQString('Bigeye')
-        if isPut:
-            ostream.writeQString('fileTransferPut')
-        else:
-            ostream.writeQString('fileTransferGet')
-        ostream.writeQString(src)
-        ostream.writeQString(dst)
-        if isPut:
-            with open(src, "rb") as f:
-                ostream.writeBytes(f.read())
-
-        block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
-        transfer.submit()
-        self._transfer_list.append(transfer)
-        self._loop.start()
-
-    def respFileTransferGet(self, istream):
-        src = istream.readQString()
-        dst = istream.readQString()
-        data = istream.readBytes()
-        with open(dst, "wb") as f:
-            f.write(data)
-
-    def reqLargeFileTransfer(self, src, dst, isPut=False):
-        block = QByteArray()
-        ostream = QDataStream(block, QIODevice.WriteOnly)
-        ostream.setVersion(QDataStream.Qt_4_8)
-        ostream.writeQString('Bigeye')
-        if isPut:
-            ostream.writeQString('largeFileTransferPut')
-        else:
-            ostream.writeQString('largeFileTransferGet')
-        ostream.writeQString(src)
-        ostream.writeQString(dst)
-        if isPut:
-            with open(src, "rb") as f:
-                ostream.writeBytes(f.read())
-
-        block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
-        transfer.submit()
-        self._transfer_list.append(transfer)
-        self._loop.start()
-
-    def respLargeFileTransferGet(self, istream):
-        src = istream.readQString()
-        dst = istream.readQString()
-        data = istream.readBytes()
-        with open(dst, "wb") as f:
-            f.write(data)
-
     @staticmethod
     def _escape(data):
         escape = QByteArray()
         escape.append(chr(0x7e))
+        """
         for i in range(data.size()):
             ch = data.at(i)
             if ch == chr(0x7e):
@@ -421,6 +310,10 @@ class Repeater(SingletonObject):
                 escape.append(chr(0x5d))
             else:
                 escape.append(ch)
+        """
+        data.replace(b"\x7d", b"\x7d\x5d")
+        data.replace(b"\x7e", b"\x7d\x5e")
+        escape.append(data)
         escape.append(chr(0x7e))
         return escape
 
@@ -483,3 +376,10 @@ class Repeater(SingletonObject):
                         print(' ' * 8, "Address ", endpoint.getAddress())
                         print(' ' * 8, "Attributes ", endpoint.getAttributes())
                         print(' ' * 8, "Max Packet Size ", endpoint.getMaxPacketSize())
+
+
+class RepeaterDelegate(SingletonObject):
+    def __init__(self, parent=None):
+        super(RepeaterDelegate, self).__init__(parent)
+        self._repeater = Repeater.instance()
+        self._repeater.register(self)

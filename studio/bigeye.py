@@ -30,6 +30,7 @@ from snapshot import *
 from video import *
 from testcasemodel import *
 from keyeventmodel import *
+from processmodel import *
 from controller import *
 
 
@@ -42,6 +43,7 @@ if __name__ == '__main__':
     
     qmlRegisterType(TestCaseModel, "Bigeye", 1, 0, "TestCaseModel")
     qmlRegisterType(KeyEventModel, "Bigeye", 1, 0, "KeyEventModel")
+    qmlRegisterType(ProcessModel, "Bigeye", 1, 0, "ProcessModel")
     qmlRegisterType(Controller, "Bigeye", 1, 0, "Controller")
     qmlRegisterType(Screenshot, "Bigeye", 1, 0, "Screenshot")
     qmlRegisterType(ScreenRecorder, "Bigeye", 1, 0, "ScreenRecorder")

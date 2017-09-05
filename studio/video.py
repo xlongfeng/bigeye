@@ -30,11 +30,10 @@ from PyQt5.QtCore import pyqtProperty, pyqtSlot, QTimer, QSize
 from PyQt5.QtGui import QImage
 from PyQt5.QtQuick import QQuickImageProvider
 
-from singletonobject import *
 from repeater import *
 
 
-class VideoRecorder(SingletonObject):
+class VideoRecorder(RepeaterDelegate):
     _rate = 0
     _width = 0
     _height = 0
@@ -57,8 +56,30 @@ class VideoRecorder(SingletonObject):
         super(VideoRecorder, self).__init__(parent)
         self._timer = QTimer(self)
         self._timer.timeout.connect(self.onFetchVideoFrame)
-        self._repeater = Repeater.instance()
-        self._repeater.videoFrameArrived.connect(self.onVideoFrameReceived)
+
+    def onFetchVideoFrame(self):
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('videoFrame')
+        self._repeater.submitRequestBlock(block)
+
+    def respVideoFrame(self, istream):
+        self._videoFrameWidth = istream.readInt()
+        self._videoFrameHeight = istream.readInt()
+        self._videoFrameBitDepth = istream.readInt()
+
+    def onExtendedDataArrived(self, category, data):
+        if category == 'videoFrame' and self._timer.isActive():
+            image = QImage(data, self._width,
+                           self._height, QImage.Format_RGB16)
+            self.frame = image
+            bits = image.bits()
+            bits.setsize(image.byteCount())
+            frame = np.array(bits, np.uint8).reshape(self._height, self._width, 2)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR5652BGR)
+            self._videoWriter.write(frame)
+            return True
+        else:
+            return False
 
     def setFrameRate(self, rate):
         self._rate = rate
@@ -86,19 +107,6 @@ class VideoRecorder(SingletonObject):
 
     def resume(self):
         self._timer.start()
-
-    @pyqtSlot()
-    def onFetchVideoFrame(self):
-        self._repeater.reqVideoFrame()
-
-    @pyqtSlot(QImage)
-    def onVideoFrameReceived(self, image):
-        self.frame = image
-        bits = image.bits()
-        bits.setsize(image.byteCount())
-        frame = np.array(bits, np.uint8).reshape(self._height, self._width, 2)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR5652BGR)
-        self._videoWriter.write(frame)
 
 
 class VideoPlayer(SingletonObject):

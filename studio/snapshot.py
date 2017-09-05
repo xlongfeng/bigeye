@@ -28,13 +28,15 @@ from PyQt5.QtCore import QObject, QMutex, QSize, QTimer
 from PyQt5.QtGui import QImage
 from PyQt5.QtQuick import QQuickImageProvider
 
-from singletonobject import *
-
 from repeater import *
 
 
-class Snapshot(SingletonObject):
+class Snapshot(RepeaterDelegate):
     _mutex = QMutex()
+
+    _snapshotWidth = 0
+    _snapshotHeight = 0
+    _snapshotBitDepth = 0
 
     _image = QImage(QSize(800, 600), QImage.Format_RGB16)
 
@@ -51,16 +53,26 @@ class Snapshot(SingletonObject):
 
     def __init__(self, parent=None):
         super(Snapshot, self).__init__(parent)
-        self._repeater = Repeater.instance()
-        self._repeater.snapshotArrived.connect(self.result)
 
     def take(self):
-        self._repeater.reqSnapshot()
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('snapshot')
+        self._repeater.submitRequestBlock(block)
 
-    def result(self, image):
-        self._mutex.lock()
-        self.image = image
-        self._mutex.unlock()
+    def respSnapshot(self, istream):
+        self._snapshotWidth = istream.readInt()
+        self._snapshotHeight = istream.readInt()
+        self._snapshotBitDepth = istream.readInt()
+
+    def onExtendedDataArrived(self, category, data):
+        if category == 'snapshot':
+            self._mutex.lock()
+            self.image = QImage(data, self._snapshotWidth,
+                           self._snapshotHeight, QImage.Format_RGB16)
+            self._mutex.unlock()
+            return True
+        else:
+            return False
 
     def save(self, filename):
         self._mutex.lock()

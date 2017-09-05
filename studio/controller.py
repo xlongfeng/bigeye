@@ -24,15 +24,14 @@
 
 from datetime import datetime
 from random import choice
-import usb1
-import cv2
-import numpy as np
 
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, QObject, QTimer
 
 from orm import *
 from keyeventmodel import *
-from repeater import Repeater
+from keyevent import *
+from process import *
+from filetransfer import *
 from snapshot import *
 from video import *
 
@@ -76,7 +75,7 @@ class Controller(QObject):
         self._pressRange = None
         self._releaseRange = None
 
-        self._repeater = Repeater.instance()
+        self._keyEvent = KeyEvent.instance()
 
         self._videoRecorder = VideoRecorder.instance()
         self._videoRecorder.frameChanged.connect(self.onPreviewChanged)
@@ -150,12 +149,12 @@ class Controller(QObject):
         timestamp += delta.seconds * 1000
         timestamp += round(delta.microseconds / 1000)
         self._model.append(name, code, down, timestamp, self._testCaseId)
-        self._repeater.reqKeyEvent(code, down)
+        self._keyEvent.report(code, down)
         if not down:
-            self._repeater.reqExecuteProgram("date")
-            self._repeater.reqExecuteProgram("date", ["-R"], True)
-            self._repeater.reqFileTransfer("bigeye.py", "/tmp/bigeye.py", True)
-            self._repeater.reqFileTransfer("repeater", "repeater")
+            Process.instance().execute("date")
+            Process.instance().execute("date", ["-R"], True)
+            FileTransfer.instance().put("bigeye.py", "/tmp/bigeye.py")
+            FileTransfer.instance().get("repeater", "repeater")
 
     @pyqtSlot()
     def onPreviewChanged(self):
