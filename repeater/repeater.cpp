@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QDebug>
 
+#include "hidgadget.h"
 #include "repeater.h"
 #include "qextserialport.h"
 #include "avcencoder.h"
@@ -21,7 +22,9 @@ Repeater::Repeater(const QString &portName, QObject *parent) : Bigeye(parent)
 
 void Repeater::onDataArrived(const QByteArray &bytes)
 {
+    qDebug() << port->portName() << "onDataArrived enter";
     port->write(bytes);
+    qDebug() << port->portName() << "onDataArrived exit";
 }
 
 void Repeater::onReadyRead()
@@ -31,9 +34,11 @@ void Repeater::onReadyRead()
     bytes.resize(len);
     port->read(bytes.data(), bytes.size());
 
+    qDebug() << port->portName() << "onReadyRead enter";
     emit dataArrived(bytes);
 
     dispose(bytes);
+    qDebug() << port->portName() << "onReadyRead exit";
 }
 
 void Repeater::startDaemon(QDataStream &stream)
@@ -60,7 +65,11 @@ void Repeater::keyEvent(QDataStream &stream)
     bool down;
     stream >> code >> down;
 
+#if 1
     qDebug() << "Key Event" << code << down;
+#else
+    HidGadget::instance()->report(code, down);
+#endif
 }
 
 void Repeater::snapshot(QDataStream &stream)

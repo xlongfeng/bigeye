@@ -5,5 +5,5 @@ SUBDIRS += \
     lib \
     repeater \
     launcher \
-    studio
+    daemon
 

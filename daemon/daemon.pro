@@ -3,15 +3,16 @@ QT -= gui
 
 CONFIG += c++11
 
-TARGET = bigeye-repeater
+TARGET = bigeye-daemon
 CONFIG += console
 CONFIG -= app_bundle
 
 TEMPLATE = app
 
+LIBS += -lusb-1.0
+
 SOURCES += main.cpp \
-    repeater.cpp \
-    hidgadget.cpp
+    daemon.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -25,8 +26,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 HEADERS += \
-    repeater.h \
-    hidgadget.h
+    daemon.h
 
 unix|win32: LIBS += -L$$OUT_PWD/../lib/ -lbigeye
 
@@ -35,22 +35,3 @@ DEPENDPATH += $$PWD/../lib
 
 win32:!win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../lib/bigeye.lib
 else:unix|win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../lib/libbigeye.a
-
-INCLUDEPATH += $$PWD/../qextserialport/src
-DEPENDPATH += $$PWD/../qextserialport
-
-greaterThan(QT_MAJOR_VERSION, 4) {
-    unix|win32: LIBS += -L$$OUT_PWD/../qextserialport/ -lQt5ExtSerialPort
-
-    win32:!win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../qextserialport/Qt5ExtSerialPort.lib
-    else:unix|win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../qextserialport/libQt5ExtSerialPort.a
-} else {
-    unix|win32: LIBS += -L$$OUT_PWD/../qextserialport/ -lqextserialport
-
-    win32:!win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../qextserialport/qextserialport.lib
-    else:unix|win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../qextserialport/libqextserialport.a
-}
-
-equals(QMAKE_CXX, "arm-linux-g++") {
-    unix:!macx: LIBS += -lvpu -lipu
-}

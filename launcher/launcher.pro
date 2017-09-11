@@ -3,7 +3,7 @@ QT -= gui
 
 CONFIG += c++11
 
-TARGET = launcher
+TARGET = bigeye-launcher
 CONFIG += console
 CONFIG -= app_bundle
 
