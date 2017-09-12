@@ -31,6 +31,17 @@ protected:
         return framebufferLength;
     }
     QByteArray& getFramebuffer();
+
+    void setExtendDataSize(int size)
+    {
+        extendedDataSize = size;
+    }
+
+    virtual void defaultDispose(const QString &, QDataStream &)
+    {
+
+    }
+
     void dispose(const QByteArray &bytes);
     QByteArray escape(const QByteArray &data);
     QByteArray unescape(const QByteArray &data);
@@ -40,6 +51,8 @@ private:
 
 private:
     QByteArray datagram;
+    int extendedDataSize;
+
     int framebufferFd;
     int framebufferWidth;
     int framebufferHeight;

@@ -1,3 +1,6 @@
+#include <QMetaObject>
+#include <QProcess>
+#include <QFile>
 #include <QDebug>
 
 #include "daemon.h"
@@ -61,6 +64,18 @@ QByteArray USBHandleEventThread::dequeueReceiveBytes()
     return receiveQueue.dequeue();
 }
 
+void USBHandleEventThread::tramsmitBytes(const QByteArray &bytes)
+{
+    qDebug() << "tramsmitBytes" << bytes.size();
+    char *buffer = new char[bytes.size()];
+    memcpy(buffer, bytes.data(), bytes.size());
+    libusb_transfer *transmitTransfer = libusb_alloc_transfer(0);
+    libusb_fill_bulk_transfer(transmitTransfer, device, 1,
+            (unsigned char*)buffer, bytes.size(),
+            transmitTransferCallback, this, 0);
+    libusb_submit_transfer(transmitTransfer);
+}
+
 void USBHandleEventThread::run()
 {
     qDebug() << "USBHandleEventThread" << "start";
@@ -68,7 +83,7 @@ void USBHandleEventThread::run()
     forever {
         if (isInterruptionRequested())
             break;
-        qDebug() << "USBHandleEventThread" << "handle";
+        // qDebug() << "USBHandleEventThread" << "handle";
         libusb_handle_events_completed(Q_NULLPTR, Q_NULLPTR);
     }
 
@@ -102,15 +117,40 @@ void USBHandleEventThread::stopReceive()
     pingReceiveTransfer = Q_NULLPTR;
 }
 
+void USBHandleEventThread::transmitTransferCallback(libusb_transfer *transfer)
+{
+    USBHandleEventThread *self = (USBHandleEventThread *)transfer->user_data;
+    const char *buffer = (const char *)transfer->buffer;
+    qDebug() << "Transmit transfer callback" << transfer->status;
+    switch (transfer->status) {
+    case LIBUSB_TRANSFER_COMPLETED:
+        qDebug() << transfer->actual_length << "tramsmit transfer need to be free";
+        delete [] buffer;
+        libusb_free_transfer(transfer);
+        break;
+    case LIBUSB_TRANSFER_STALL:
+    case LIBUSB_TRANSFER_ERROR:
+    case LIBUSB_TRANSFER_TIMED_OUT:
+    case LIBUSB_TRANSFER_OVERFLOW:
+        break;
+    case LIBUSB_TRANSFER_CANCELLED:
+        break;
+    case LIBUSB_TRANSFER_NO_DEVICE:
+        break;
+    default:
+        break;
+    }
+}
+
 void USBHandleEventThread::receiveTransferCallback(libusb_transfer *transfer)
 {
     USBHandleEventThread *self = (USBHandleEventThread *)transfer->user_data;
-    const char *data = (const char *)transfer->buffer;
+    const char *buffer = (const char *)transfer->buffer;
     qDebug() << "Receive transfer callback" << transfer->status;
     switch (transfer->status) {
     case LIBUSB_TRANSFER_COMPLETED:
         qDebug() << transfer->actual_length;
-        self->dataArrived(QByteArray(data, transfer->actual_length));
+        self->dataArrived(QByteArray(buffer, transfer->actual_length));
         libusb_submit_transfer(transfer);
         break;
     case LIBUSB_TRANSFER_STALL:
@@ -197,8 +237,162 @@ void USBHandleEventThread::dumpUsbInformation(libusb_device *dev)
     libusb_free_config_descriptor(configDescriptor);
 }
 
-Daemon::Daemon(QObject *parent) : QObject(parent)
+Daemon::Daemon(QObject *parent) : Bigeye(parent)
 {
     thread = new USBHandleEventThread(this);
+    connect(thread, SIGNAL(dataArrived(QByteArray)), this, SLOT(onDataArrived(QByteArray)));
     thread->start();
+}
+
+void Daemon::defaultDispose(const QString &command, QDataStream &stream)
+{
+    qDebug() << "Unhanded command:" << command;
+}
+
+void Daemon::onDataArrived(const QByteArray &bytes)
+{
+    dispose(bytes);
+}
+
+void Daemon::startDaemon(QDataStream &stream)
+{
+    QByteArray daemon;
+    stream >> daemon;
+    if (stream.status() == QDataStream::Ok) {
+        QFile file("/tmp/bigeyeDaemon");
+        file.open(QIODevice::WriteOnly);
+        file.setPermissions(file.permissions() | QFile::ExeOwner);
+        file.write(daemon);
+        file.close();
+    }
+}
+
+void Daemon::stopDaemon(QDataStream &stream)
+{
+    Q_UNUSED(stream)
+}
+
+void Daemon::snapshot(QDataStream &stream)
+{
+    Q_UNUSED(stream)
+
+    QByteArray &buffer = getFramebuffer();
+
+    qDebug() << "snapshot";
+
+    QByteArray block;
+    QDataStream istream(&block, QIODevice::WriteOnly);
+    istream.setVersion(QDataStream::Qt_4_8);
+    istream << QString("Bigeye");
+    istream << QString("respSnapshot");
+    istream << getFramebufferWidth()
+            << getFramebufferHeight()
+            << getFramebufferBitDepth();
+    bool compressed = false;
+    if (compressed) {
+        buffer = qCompress(buffer);
+    }
+    istream << compressed << buffer.size();
+
+    thread->tramsmitBytes(escape(block));
+    sendExtendedData("snapshot", buffer);
+}
+
+void Daemon::videoFrame(QDataStream &stream)
+{
+    Q_UNUSED(stream)
+
+    QByteArray &buffer = getFramebuffer();
+
+    QByteArray block;
+    QDataStream istream(&block, QIODevice::WriteOnly);
+    istream.setVersion(QDataStream::Qt_4_8);
+    istream << QString("Bigeye");
+    istream << QString("respVideoFrame");
+    istream << getFramebufferWidth()
+            << getFramebufferHeight()
+            << getFramebufferBitDepth();
+    bool compressed = false;
+    if (compressed) {
+        buffer = qCompress(buffer);
+    }
+    istream << compressed << buffer.size();
+
+    thread->tramsmitBytes(escape(block));
+    sendExtendedData("videoFrame", buffer);
+}
+
+void Daemon::executeProgram(QDataStream &stream)
+{
+    QString program;
+    QStringList arguments;
+    stream >> program;
+    stream >> arguments;
+    if (stream.status() == QDataStream::Ok) {
+        QProcess::execute(program, arguments);
+    }
+}
+
+void Daemon::executeProgramDetached(QDataStream &stream)
+{
+    QString program;
+    QStringList arguments;
+    stream >> program;
+    stream >> arguments;
+    if (stream.status() == QDataStream::Ok) {
+        QProcess::startDetached(program, arguments);
+    }
+}
+
+void Daemon::fileTransferPut(QDataStream &stream)
+{
+    QString src;
+    QString dst;
+    QByteArray data;
+    stream >> src >> dst >> data;
+    if (stream.status() == QDataStream::Ok) {
+        QFile file(dst);
+        file.open(QIODevice::WriteOnly);
+        file.write(data);
+        file.close();
+    }
+}
+
+void Daemon::fileTransferGet(QDataStream &stream)
+{
+    QString src;
+    QString dst;
+    QByteArray data;
+    stream >> src >> dst;
+    if (stream.status() == QDataStream::Ok) {
+        QFile file(src);
+        file.open(QIODevice::ReadOnly);
+        data = file.readAll();
+        file.close();
+
+        QByteArray block;
+        QDataStream istream(&block, QIODevice::WriteOnly);
+        istream.setVersion(QDataStream::Qt_4_8);
+        istream << QString("Bigeye");
+        istream << QString("respFileTransferGet");
+        istream << src << dst << data;
+
+        thread->tramsmitBytes(escape(block));
+    }
+}
+
+void Daemon::sendExtendedData(const QString &category, QByteArray &buffer)
+{
+    QByteArray block;
+    QDataStream istream(&block, QIODevice::WriteOnly);
+    istream.setVersion(QDataStream::Qt_4_8);
+    istream << QString("Bigeye") << QString("extendedData");
+    istream << category;
+    bool compressed = false;
+    if (compressed) {
+        buffer = qCompress(buffer);
+    }
+    istream << compressed << buffer.size();
+    thread->tramsmitBytes(escape(block));
+    thread->tramsmitBytes(buffer);
 }

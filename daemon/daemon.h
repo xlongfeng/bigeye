@@ -3,10 +3,10 @@
 
 #include <libusb-1.0/libusb.h>
 
-#include <QObject>
 #include <QThread>
 #include <QMutex>
 #include <QQueue>
+#include <QDataStream>
 
 #include "bigeye.h"
 
@@ -34,6 +34,8 @@ public:
     void enqueueReceiveBytes(const QByteArray &bytes);
     QByteArray dequeueReceiveBytes();
 
+    void tramsmitBytes(const QByteArray &bytes);
+
 signals:
     void dataArrived(const QByteArray &bytes);
 
@@ -43,6 +45,7 @@ protected:
 private:
     void startReceive();
     void stopReceive();
+    static void transmitTransferCallback(libusb_transfer *transfer);
     static void receiveTransferCallback(libusb_transfer *transfer);
     static int hotplugCallback(libusb_context *ctx, libusb_device *dev,
                                 libusb_hotplug_event event, void *user_data);
@@ -52,6 +55,11 @@ private:
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     bool interrupt;
 #endif
+
+    struct {
+        QByteArray buffer;
+        libusb_transfer *transfer;
+    } USBTransferBlock;
 
     QQueue<QByteArray> receiveQueue;
 
@@ -65,11 +73,29 @@ private:
     libusb_hotplug_callback_handle hotplug;
 };
 
-class Daemon : public QObject
+class Daemon : public Bigeye
 {
     Q_OBJECT
+
 public:
     explicit Daemon(QObject *parent = Q_NULLPTR);
+
+protected:
+    virtual void defaultDispose(const QString &command, QDataStream &stream);
+
+private slots:
+    void onDataArrived(const QByteArray &bytes);
+    void startDaemon(QDataStream &stream);
+    void stopDaemon(QDataStream &stream);
+    void snapshot(QDataStream &stream);
+    void videoFrame(QDataStream &stream);
+    void executeProgram(QDataStream &stream);
+    void executeProgramDetached(QDataStream &stream);
+    void fileTransferPut(QDataStream &stream);
+    void fileTransferGet(QDataStream &stream);
+
+private:
+    void sendExtendedData(const QString &category, QByteArray &buffer);
 
 private:
     QMutex mutex;

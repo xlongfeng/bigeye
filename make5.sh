@@ -10,4 +10,4 @@ cd target-qt5
 
 qmake ..
 
-make -j4
+make

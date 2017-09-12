@@ -24,12 +24,15 @@ private slots:
     void startDaemon(QDataStream &stream);
     void stopDaemon(QDataStream &stream);
     void keyEvent(QDataStream &stream);
+    void extendedData(QDataStream &stream);
+#if 0
     void snapshot(QDataStream &stream);
     void videoFrame(QDataStream &stream);
     void executeProgram(QDataStream &stream);
     void executeProgramDetached(QDataStream &stream);
     void fileTransferPut(QDataStream &stream);
     void fileTransferGet(QDataStream &stream);
+#endif
 
 private:
     void sendExtendedData(const QString &category, QByteArray &buffer);

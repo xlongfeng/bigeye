@@ -10,4 +10,4 @@ cd target-qt4/
 
 /home/development/ltib/rootfs/usr/bin/qmake ..
 
-make -j4
+make

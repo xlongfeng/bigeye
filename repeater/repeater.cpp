@@ -8,7 +8,8 @@
 #include "qextserialport.h"
 #include "avcencoder.h"
 
-Repeater::Repeater(const QString &portName, QObject *parent) : Bigeye(parent)
+Repeater::Repeater(const QString &portName, QObject *parent) :
+    Bigeye(parent)
 {
     port = new QextSerialPort(portName, QextSerialPort::EventDriven);
 
@@ -22,9 +23,7 @@ Repeater::Repeater(const QString &portName, QObject *parent) : Bigeye(parent)
 
 void Repeater::onDataArrived(const QByteArray &bytes)
 {
-    qDebug() << port->portName() << "onDataArrived enter";
     port->write(bytes);
-    qDebug() << port->portName() << "onDataArrived exit";
 }
 
 void Repeater::onReadyRead()
@@ -34,11 +33,9 @@ void Repeater::onReadyRead()
     bytes.resize(len);
     port->read(bytes.data(), bytes.size());
 
-    qDebug() << port->portName() << "onReadyRead enter";
     emit dataArrived(bytes);
 
     dispose(bytes);
-    qDebug() << port->portName() << "onReadyRead exit";
 }
 
 void Repeater::startDaemon(QDataStream &stream)
@@ -65,13 +62,24 @@ void Repeater::keyEvent(QDataStream &stream)
     bool down;
     stream >> code >> down;
 
-#if 1
-    qDebug() << "Key Event" << code << down;
-#else
+    // qDebug() << "Key Event start" << code << down;
     HidGadget::instance()->report(code, down);
-#endif
+    // qDebug() << "Key Event end" << code << down;
 }
 
+void Repeater::extendedData(QDataStream &stream)
+{
+    QString category;
+    bool compressed;
+    int dataSize;
+    stream >> category >> compressed >> dataSize;
+
+    if (stream.status() == QDataStream::Ok) {
+        setExtendDataSize(dataSize);
+    }
+}
+
+#if 0
 void Repeater::snapshot(QDataStream &stream)
 {
     Q_UNUSED(stream)
@@ -194,3 +202,4 @@ void Repeater::sendExtendedData(const QString &category, QByteArray &buffer)
     port->write(escape(block));
     port->write(buffer);
 }
+#endif

@@ -8,7 +8,9 @@
 
 #include "bigeye.h"
 
-Bigeye::Bigeye(QObject *parent) : QObject(parent)
+Bigeye::Bigeye(QObject *parent) :
+    QObject(parent),
+    extendedDataSize(-1)
 {
     getFramebufferInfo();
 }
@@ -17,6 +19,8 @@ void Bigeye::dispose(const QByteArray &bytes)
 {
     for (int i = 0; i < bytes.size(); i++) {
         char ch = bytes.at(i);
+        if (extendedDataSize-- > 0)
+            continue;
         if (ch == 0x7e) {
             if (datagram.size() > 0) {
                 const QByteArray &block = unescape(datagram);
@@ -26,7 +30,12 @@ void Bigeye::dispose(const QByteArray &bytes)
                 QString command;
                 istream >> magic >> command;
                 if (magic == "Bigeye") {
-                    QMetaObject::invokeMethod(this, command.toLatin1().constData(), Q_ARG(QDataStream &, istream));
+                    const QByteArray &method = QString("%1 (QDataStream &)").arg(command).toLatin1();
+                    const char *methodSignature = method.constData();
+                    if (metaObject()->indexOfSlot(QMetaObject::normalizedSignature(methodSignature)) != -1)
+                        QMetaObject::invokeMethod(this, command.toLatin1().constData(), Q_ARG(QDataStream &, istream));
+                    else
+                        defaultDispose(command, istream);
                 } else {
                     qDebug() << "Magic string error";
                 }
