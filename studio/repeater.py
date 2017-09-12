@@ -22,7 +22,6 @@
 #############################################################################
 
 
-from enum import Enum
 import usb1
 
 from PyQt5.QtCore import (pyqtProperty, pyqtSignal, pyqtSlot,
@@ -134,8 +133,8 @@ class Repeater(SingletonObject):
                 remainder = self._extendedDataSize - size
                 length = len(data) - start
                 if length >= remainder:
-                    self._extendedDataBuffer.append(data[start:(start + length)])
-                    start += (length + 1)
+                    self._extendedDataBuffer.append(data[start:(start + remainder)])
+                    start += remainder
                     if self._extendedDataCompressed:
                         self._extendedDataBuffer = qUncompress(self._extendedDataBuffer)
                     self.onDisposedExtendedData()
@@ -184,12 +183,12 @@ class Repeater(SingletonObject):
                         getattr(delegate, response)(istream)
                         handled = True
                         if istream.status() != QDataStream.Ok:
-                            print("eeeeeeeeeeebbbbbbbeeeeeeeeeeeeee")
+                            print("{}: eeeeeeeeeeeeee".format(response))
                         break
                 if not handled:
                     print("Unhandled response:", response)
         else:
-            print("onDisposed eeeeeeeeeeeeeee")
+            print("onDisposed failed:", block.size())
 
     def onDisposedExtendedData(self):
         for delegate in self._delegates:
