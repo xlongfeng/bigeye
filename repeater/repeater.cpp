@@ -1,4 +1,5 @@
 #include <QMetaObject>
+#include <QTimer>
 #include <QProcess>
 #include <QFile>
 #include <QDebug>
@@ -8,34 +9,71 @@
 #include "qextserialport.h"
 #include "avcencoder.h"
 
-Repeater::Repeater(const QString &portName, QObject *parent) :
-    Bigeye(parent)
+#undef POLL_MODE
+
+Repeater::Repeater(const QString &portName, bool isStudio, QObject *parent) :
+    Bigeye(parent),
+    isStudio(isStudio)
 {
+#ifdef POLL_MODE
+    port = new QextSerialPort(portName, QextSerialPort::Polling);
+    pollTimer = new QTimer(this);
+    connect(pollTimer, SIGNAL(timeout()), this, SLOT(onPollTimeout()));
+#else
     port = new QextSerialPort(portName, QextSerialPort::EventDriven);
+    connect(port, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
+#endif
+
+    buffer.reserve(BufferSize);
 
     if (port->open(QIODevice::ReadWrite) == true) {
-        connect(port, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
         qDebug() << "Starting bigeye repeater at" << port->portName();
     } else {
         qDebug() << "device failed to open:" << port->errorString();
     }
+
+#ifdef POLL_MODE
+    pollTimer = new QTimer(this);
+    connect(pollTimer, SIGNAL(timeout()), this, SLOT(onPollTimeout()));
+    pollTimer->start(10);
+#endif
 }
 
-void Repeater::onDataArrived(const QByteArray &bytes)
+void Repeater::onPollTimeout()
 {
-    port->write(bytes);
+    onReadyRead();
+}
+
+void Repeater::onDataArrived(const char *data, int length)
+{
+    port->write(data, length);
 }
 
 void Repeater::onReadyRead()
 {
-    QByteArray bytes;
-    int len = port->bytesAvailable();
-    bytes.resize(len);
-    port->read(bytes.data(), bytes.size());
-
-    emit dataArrived(bytes);
-
-    dispose(bytes);
+#ifdef POLL_MODE
+    forever {
+        int lenght = port->read(buffer.data(), BufferSize);
+        if (lenght > 0) {
+            emit dataArrived(buffer.constData(), lenght);
+            if (!isStudio) {
+                qDebug() << port->portName() << lenght;
+            }
+            if (isStudio)
+                dispose(QByteArray::fromRawData(buffer.constData(), lenght));
+        } else {
+            break;
+        }
+        break;
+    }
+#else
+    int lenght = port->read(buffer.data(), BufferSize);
+    if (lenght > 0) {
+        emit dataArrived(buffer.constData(), lenght);
+        if (isStudio)
+            dispose(QByteArray::fromRawData(buffer.constData(), lenght));
+    }
+#endif
 }
 
 void Repeater::startDaemon(QDataStream &stream)

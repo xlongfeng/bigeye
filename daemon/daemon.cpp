@@ -5,22 +5,19 @@
 
 #include "daemon.h"
 
-static const int UsbReceiveBufferSize = 16384;
 
 USBHandleEventThread::USBHandleEventThread(QObject *parent) : QThread(parent)
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     , interrupt(false)
 #endif
 {
-    pingRreceiveBuffer.resize(UsbReceiveBufferSize);
-    pongRreceiveBuffer.resize(UsbReceiveBufferSize);
-    pingReceiveTransfer = Q_NULLPTR;
-    pongReceiveTransfer = Q_NULLPTR;
-
     int rc = libusb_init(&ctx);
     if (LIBUSB_SUCCESS != rc) {
         qDebug() << "libusb_init" << libusb_error_name(rc);
     }
+
+    pingReceiveBlock = new USBTransferBlock(this);
+    pongReceiveBlock = new USBTransferBlock(this);
 
     rc = libusb_hotplug_register_callback(
                 ctx, (libusb_hotplug_event)(LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
@@ -35,14 +32,6 @@ USBHandleEventThread::USBHandleEventThread(QObject *parent) : QThread(parent)
 
 USBHandleEventThread::~USBHandleEventThread()
 {
-    if (pongReceiveTransfer) {
-        libusb_free_transfer(pongReceiveTransfer);
-        pongReceiveTransfer = Q_NULLPTR;
-    }
-    if (pingReceiveTransfer) {
-        libusb_free_transfer(pingReceiveTransfer);
-        pingReceiveTransfer = Q_NULLPTR;
-    }
     libusb_exit(ctx);
 }
 
@@ -66,14 +55,11 @@ QByteArray USBHandleEventThread::dequeueReceiveBytes()
 
 void USBHandleEventThread::tramsmitBytes(const QByteArray &bytes)
 {
-    qDebug() << "tramsmitBytes" << bytes.size();
-    char *buffer = new char[bytes.size()];
-    memcpy(buffer, bytes.data(), bytes.size());
-    libusb_transfer *transmitTransfer = libusb_alloc_transfer(0);
-    libusb_fill_bulk_transfer(transmitTransfer, device, 1,
-            (unsigned char*)buffer, bytes.size(),
-            transmitTransferCallback, this, 0);
-    libusb_submit_transfer(transmitTransfer);
+    // qDebug() << "tramsmitBytes" << bytes.size();
+    USBTransferBlock *transmitBlock = new USBTransferBlock(this, bytes);
+    transmitBlock->alloc();
+    transmitBlock->fillBulk(device, 1, transmitTransferCallback);
+    transmitBlock->submit();
 }
 
 void USBHandleEventThread::run()
@@ -94,75 +80,68 @@ void USBHandleEventThread::startReceive()
 {
     libusb_claim_interface(device, 0);
 
-    pingReceiveTransfer = libusb_alloc_transfer(0);
-    pongReceiveTransfer = libusb_alloc_transfer(0);
+    pingReceiveBlock->alloc();
+    pingReceiveBlock->fillBulk(device, 129, receiveTransferCallback);
+    pingReceiveBlock->submit();
 
-    libusb_fill_bulk_transfer(pingReceiveTransfer, device, 129,
-            (unsigned char *)pingRreceiveBuffer.data(), UsbReceiveBufferSize,
-            receiveTransferCallback, this, 0);
-
-    libusb_fill_bulk_transfer(pongReceiveTransfer, device, 129,
-            (unsigned char *)pongRreceiveBuffer.data(), UsbReceiveBufferSize,
-            receiveTransferCallback, this, 0);
-
-    libusb_submit_transfer(pingReceiveTransfer);
-    libusb_submit_transfer(pongReceiveTransfer);
+    pongReceiveBlock->alloc();
+    pongReceiveBlock->fillBulk(device, 129, receiveTransferCallback);
+    pongReceiveBlock->submit();
 }
 
 void USBHandleEventThread::stopReceive()
 {
-    libusb_cancel_transfer(pongReceiveTransfer);
-    libusb_cancel_transfer(pingReceiveTransfer);
-    pongReceiveTransfer = Q_NULLPTR;
-    pingReceiveTransfer = Q_NULLPTR;
+    pongReceiveBlock->cancel();
+    pongReceiveBlock->free();
+    pingReceiveBlock->cancel();
+    pingReceiveBlock->free();
 }
 
 void USBHandleEventThread::transmitTransferCallback(libusb_transfer *transfer)
 {
-    USBHandleEventThread *self = (USBHandleEventThread *)transfer->user_data;
-    const char *buffer = (const char *)transfer->buffer;
-    qDebug() << "Transmit transfer callback" << transfer->status;
+    USBTransferBlock *usbTransferBlock = (USBTransferBlock *)transfer->user_data;
+
     switch (transfer->status) {
     case LIBUSB_TRANSFER_COMPLETED:
-        qDebug() << transfer->actual_length << "tramsmit transfer need to be free";
-        delete [] buffer;
-        libusb_free_transfer(transfer);
+        delete usbTransferBlock;
         break;
     case LIBUSB_TRANSFER_STALL:
     case LIBUSB_TRANSFER_ERROR:
     case LIBUSB_TRANSFER_TIMED_OUT:
     case LIBUSB_TRANSFER_OVERFLOW:
-        break;
+        // break;
     case LIBUSB_TRANSFER_CANCELLED:
-        break;
+        // break;
     case LIBUSB_TRANSFER_NO_DEVICE:
-        break;
+        // break;
     default:
+        qDebug() << "Transmit transfer callback" << transfer->status;
         break;
     }
 }
 
 void USBHandleEventThread::receiveTransferCallback(libusb_transfer *transfer)
 {
-    USBHandleEventThread *self = (USBHandleEventThread *)transfer->user_data;
+    USBTransferBlock *usbTransferBlock = (USBTransferBlock *)transfer->user_data;
+    USBHandleEventThread *self = (USBHandleEventThread *)usbTransferBlock->parent;
     const char *buffer = (const char *)transfer->buffer;
-    qDebug() << "Receive transfer callback" << transfer->status;
+
     switch (transfer->status) {
     case LIBUSB_TRANSFER_COMPLETED:
-        qDebug() << transfer->actual_length;
         self->dataArrived(QByteArray(buffer, transfer->actual_length));
-        libusb_submit_transfer(transfer);
+        usbTransferBlock->submit();
         break;
     case LIBUSB_TRANSFER_STALL:
     case LIBUSB_TRANSFER_ERROR:
     case LIBUSB_TRANSFER_TIMED_OUT:
     case LIBUSB_TRANSFER_OVERFLOW:
-        break;
+        // break;
     case LIBUSB_TRANSFER_CANCELLED:
-        break;
+        // break;
     case LIBUSB_TRANSFER_NO_DEVICE:
-        break;
+        // break;
     default:
+        qDebug() << "Receive transfer callback" << transfer->status;
         break;
     }
 }
@@ -277,8 +256,6 @@ void Daemon::snapshot(QDataStream &stream)
     Q_UNUSED(stream)
 
     QByteArray &buffer = getFramebuffer();
-
-    qDebug() << "snapshot";
 
     QByteArray block;
     QDataStream istream(&block, QIODevice::WriteOnly);

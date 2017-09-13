@@ -10,6 +10,7 @@
 
 #include "bigeye.h"
 
+
 class USBHandleEventThread: public QThread
 {
     Q_OBJECT
@@ -56,17 +57,74 @@ private:
     bool interrupt;
 #endif
 
-    struct {
+    class USBTransferBlock {
+    public:
+        USBTransferBlock(USBHandleEventThread *parent, int length = DefaultBufferSize) :
+            parent(parent),
+            transfer(Q_NULLPTR)
+        {
+            buffer.resize(length);
+            data = (unsigned char *)buffer.data();
+            size = length;
+        }
+
+        USBTransferBlock(USBHandleEventThread *parent, const QByteArray &bytes) :
+            parent(parent),
+            buffer(bytes),
+            transfer(Q_NULLPTR)
+        {
+            data = (unsigned char *)buffer.data();
+            size = buffer.size();
+        }
+
+        ~USBTransferBlock()
+        {
+            free();
+        }
+
+        void alloc()
+        {
+            transfer = libusb_alloc_transfer(0);
+            if (transfer == Q_NULLPTR) {
+            }
+        }
+
+        void free()
+        {
+            if (transfer != Q_NULLPTR) {
+                libusb_free_transfer(transfer);
+                transfer = Q_NULLPTR;
+            }
+        }
+
+        void fillBulk(libusb_device_handle *dev_handle, unsigned char endpoint,
+                      libusb_transfer_cb_fn callback, unsigned int timeout=0)
+        {
+            libusb_fill_bulk_transfer(transfer, dev_handle, endpoint, data, size, callback, this, timeout);
+        }
+
+        void submit()
+        {
+            libusb_submit_transfer(transfer);
+        }
+
+        void cancel()
+        {
+            libusb_cancel_transfer(transfer);
+        }
+
+        USBHandleEventThread *parent;
         QByteArray buffer;
+        unsigned char *data;
+        int size;
         libusb_transfer *transfer;
-    } USBTransferBlock;
+        static const int DefaultBufferSize = 16384;
+    };
 
     QQueue<QByteArray> receiveQueue;
 
-    QByteArray pingRreceiveBuffer;
-    QByteArray pongRreceiveBuffer;
-    libusb_transfer *pingReceiveTransfer;
-    libusb_transfer *pongReceiveTransfer;
+    USBTransferBlock *pingReceiveBlock;
+    USBTransferBlock *pongReceiveBlock;
 
     libusb_context *ctx;
     libusb_device_handle *device;
