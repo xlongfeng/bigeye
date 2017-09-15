@@ -5,19 +5,20 @@
 
 #include "daemon.h"
 
+QList<USBHandleEventThread::USBTransferBlock *> USBHandleEventThread::USBTransferBlock::transferBlockFreeList;
 
 USBHandleEventThread::USBHandleEventThread(QObject *parent) : QThread(parent)
 #if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     , interrupt(false)
 #endif
 {
+    pingReceiveBlock = USBTransferBlock::create(this);
+    pongReceiveBlock = USBTransferBlock::create(this);
+
     int rc = libusb_init(&ctx);
     if (LIBUSB_SUCCESS != rc) {
         qDebug() << "libusb_init" << libusb_error_name(rc);
     }
-
-    pingReceiveBlock = new USBTransferBlock(this);
-    pongReceiveBlock = new USBTransferBlock(this);
 
     rc = libusb_hotplug_register_callback(
                 ctx, (libusb_hotplug_event)(LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
@@ -33,6 +34,8 @@ USBHandleEventThread::USBHandleEventThread(QObject *parent) : QThread(parent)
 USBHandleEventThread::~USBHandleEventThread()
 {
     libusb_exit(ctx);
+
+    USBTransferBlock::destroyAll();
 }
 
 void USBHandleEventThread::stop()
@@ -56,8 +59,7 @@ QByteArray USBHandleEventThread::dequeueReceiveBytes()
 void USBHandleEventThread::tramsmitBytes(const QByteArray &bytes)
 {
     // qDebug() << "tramsmitBytes" << bytes.size();
-    USBTransferBlock *transmitBlock = new USBTransferBlock(this, bytes);
-    transmitBlock->alloc();
+    USBTransferBlock *transmitBlock = USBTransferBlock::create(this, bytes);
     transmitBlock->fillBulk(device, 1, transmitTransferCallback);
     transmitBlock->submit();
 }
@@ -78,13 +80,13 @@ void USBHandleEventThread::run()
 
 void USBHandleEventThread::startReceive()
 {
+    if (libusb_kernel_driver_active(device, 0) == 1)
+        libusb_detach_kernel_driver(device, 0);
     libusb_claim_interface(device, 0);
 
-    pingReceiveBlock->alloc();
     pingReceiveBlock->fillBulk(device, 129, receiveTransferCallback);
     pingReceiveBlock->submit();
 
-    pongReceiveBlock->alloc();
     pongReceiveBlock->fillBulk(device, 129, receiveTransferCallback);
     pongReceiveBlock->submit();
 }
@@ -92,9 +94,7 @@ void USBHandleEventThread::startReceive()
 void USBHandleEventThread::stopReceive()
 {
     pongReceiveBlock->cancel();
-    pongReceiveBlock->free();
     pingReceiveBlock->cancel();
-    pingReceiveBlock->free();
 }
 
 void USBHandleEventThread::transmitTransferCallback(libusb_transfer *transfer)
@@ -103,7 +103,7 @@ void USBHandleEventThread::transmitTransferCallback(libusb_transfer *transfer)
 
     switch (transfer->status) {
     case LIBUSB_TRANSFER_COMPLETED:
-        delete usbTransferBlock;
+        usbTransferBlock->reclaim();
         break;
     case LIBUSB_TRANSFER_STALL:
     case LIBUSB_TRANSFER_ERROR:
@@ -149,8 +149,8 @@ void USBHandleEventThread::receiveTransferCallback(libusb_transfer *transfer)
 int USBHandleEventThread::hotplugCallback(libusb_context *ctx, libusb_device *dev,
                             libusb_hotplug_event event, void *user_data)
 {
+    Q_UNUSED(ctx)
     USBHandleEventThread *self = (USBHandleEventThread *)user_data;
-
     int rc;
 
     if (LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED == event) {
@@ -225,6 +225,7 @@ Daemon::Daemon(QObject *parent) : Bigeye(parent)
 
 void Daemon::defaultDispose(const QString &command, QDataStream &stream)
 {
+    Q_UNUSED(stream)
     qDebug() << "Unhanded command:" << command;
 }
 

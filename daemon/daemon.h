@@ -6,7 +6,9 @@
 #include <QThread>
 #include <QMutex>
 #include <QQueue>
+#include <QList>
 #include <QDataStream>
+#include <QDebug>
 
 #include "bigeye.h"
 
@@ -59,27 +61,47 @@ private:
 
     class USBTransferBlock {
     public:
-        USBTransferBlock(USBHandleEventThread *parent, int length = DefaultBufferSize) :
-            parent(parent),
-            transfer(Q_NULLPTR)
-        {
-            buffer.resize(length);
-            data = (unsigned char *)buffer.data();
-            size = length;
-        }
-
         USBTransferBlock(USBHandleEventThread *parent, const QByteArray &bytes) :
             parent(parent),
-            buffer(bytes),
             transfer(Q_NULLPTR)
         {
-            data = (unsigned char *)buffer.data();
-            size = buffer.size();
+            init(bytes);
+            alloc();
         }
 
         ~USBTransferBlock()
         {
             free();
+        }
+
+        static USBTransferBlock *create(USBHandleEventThread *parent, const QByteArray &bytes)
+        {
+            USBTransferBlock *block;
+            if (transferBlockFreeList.isEmpty()) {
+                block = new USBTransferBlock(parent, bytes);
+                qDebug() << "new transfer block";
+            } else {
+                block = transferBlockFreeList.takeFirst();
+                block->init(bytes);
+            }
+            return block;
+        }
+
+        static USBTransferBlock *create(USBHandleEventThread *parent, int length = DefaultBufferSize)
+        {
+            QByteArray bytes;
+            bytes.resize(length);
+            return create(parent, bytes);
+        }
+
+        static void destroyAll()
+        {
+            qDeleteAll(transferBlockFreeList);
+        }
+
+        void reclaim()
+        {
+            transferBlockFreeList.append(this);
         }
 
         void alloc()
@@ -97,6 +119,13 @@ private:
             }
         }
 
+        void init(const QByteArray &bytes)
+        {
+            buffer = bytes;
+            data = (unsigned char *)buffer.data();
+            size = buffer.size();
+        }
+
         void fillBulk(libusb_device_handle *dev_handle, unsigned char endpoint,
                       libusb_transfer_cb_fn callback, unsigned int timeout=0)
         {
@@ -112,6 +141,8 @@ private:
         {
             libusb_cancel_transfer(transfer);
         }
+
+        static QList<USBTransferBlock *> transferBlockFreeList;
 
         USBHandleEventThread *parent;
         QByteArray buffer;
