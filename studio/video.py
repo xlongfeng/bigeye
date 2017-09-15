@@ -4,7 +4,7 @@
 
 #############################################################################
 #
-# Bigeye - Accessorial Tool of Daily Test
+# Bigeye - Accessorial Tool for Daily Test
 # Copyright (C) 2017 xlongfeng <xlongfeng@126.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -152,7 +152,7 @@ class ScreenRecorder(QObject):
 
     @pyqtSlot()
     def start(self):
-        self._recorder.setFrameRate(10)
+        self._recorder.setFrameRate(5)
         self._recorder.setResolution(800, 600)
         self._recorder.setFilename("bigeye-video-{}".format(datetime.now().strftime("%Y%m%d%H%M%S")))
         self._recorder.start()

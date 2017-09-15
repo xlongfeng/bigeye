@@ -4,7 +4,7 @@
 
 #############################################################################
 #
-# Bigeye - Accessorial Tool of Daily Test
+# Bigeye - Accessorial Tool for Daily Test
 # Copyright (C) 2017 xlongfeng <xlongfeng@126.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -111,7 +111,7 @@ class Controller(QObject):
         self._startTime = datetime.now()
         self._model.clear()
 
-        self._videoRecorder.setFrameRate(10)
+        self._videoRecorder.setFrameRate(5)
         self._videoRecorder.setResolution(800, 600)
         self._videoRecorder.setFilename(str(self._testCaseId))
         self._videoRecorder.start()
@@ -150,11 +150,13 @@ class Controller(QObject):
         timestamp += round(delta.microseconds / 1000)
         self._model.append(name, code, down, timestamp, self._testCaseId)
         self._keyEvent.report(code, down)
+        """
         if not down:
             Process.instance().execute("date")
             Process.instance().execute("date", ["-R"], True)
             FileTransfer.instance().put("bigeye.py", "/tmp/bigeye.py")
             FileTransfer.instance().get("repeater", "repeater")
+        """
 
     @pyqtSlot()
     def onPreviewChanged(self):

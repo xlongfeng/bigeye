@@ -1,5 +1,5 @@
 /*
- * Bigeye - Accessorial Tool of Daily Test
+ * Bigeye - Accessorial Tool for Daily Test
  * Copyright (C) 2017 xlongfeng <xlongfeng@126.com>
  *
  * This program is free software: you can redistribute it and/or modify
