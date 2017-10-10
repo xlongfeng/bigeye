@@ -28,27 +28,22 @@ Pane {
 
     state: "stopped"
 
-    KeyEventModel {
-        id: keyEventModel
-    }
-
     Controller {
         id: keyLogger
-        model: keyEventModel
     }
 
     ColumnLayout {
         anchors.fill: parent
 
         RowLayout {
-            Rectangle {
-                color: "blue"
-                width: 600
-                height: 450 // 360 for polar
+            Image {
+                width: 800
+                height: 600
+                source: keyLogger.preview
             }
 
             KeyLoggerView {
-                model: keyEventModel
+                model: keyLogger.model
 
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -83,7 +78,6 @@ Pane {
                             }
                         }
                         keyLogger.setAutomation(true)
-                        keyEventModel.clear()
                         keyLogger.start(testCase.text)
                     } else {
                         randomOperation.state = "stopped"
@@ -109,10 +103,10 @@ Pane {
             RangeSlider {
                 id: pressRange
                 from: 1
-                to: 100
+                to: 30
                 stepSize: 1
                 first.value: 1
-                second.value: 10
+                second.value: 2
 
                 Layout.fillWidth: true
             }
@@ -128,10 +122,10 @@ Pane {
             RangeSlider {
                 id: releaseRange
                 from: 100
-                to: 5000
+                to: 2000
                 stepSize: 10
                 first.value: 100
-                second.value: 500
+                second.value: 200
 
                 Layout.fillWidth: true
             }

@@ -25,9 +25,9 @@ ApplicationWindow {
     id: window
 
     visible: true
-    width: 1024
-    height: 800
-    title: qsTr("Automated Testing - Bigeye")
+    minimumWidth: 1280
+    minimumHeight: 960
+    title: qsTr("Bigeye Studio")
 
     header: ToolBar {
         RowLayout {
@@ -48,7 +48,6 @@ ApplicationWindow {
                         } else {
                             stackView.pop()
                             listView.currentIndex = -1
-                            testCase.model.select()
                         }
                     } else {
                         drawer.open()
@@ -58,7 +57,7 @@ ApplicationWindow {
 
             Label {
                 id: titleLabel
-                text: listView.currentItem ? listView.currentItem.text : qsTr("Test Case List")
+                text: listView.currentItem ? listView.currentItem.text : qsTr("Bigeye Studio")
                 font.pixelSize: 20
                 elide: Label.ElideRight
                 horizontalAlignment: Qt.AlignHCenter
@@ -67,6 +66,7 @@ ApplicationWindow {
             }
 
             ToolButton {
+                id: optionToolButton
                 contentItem: Image {
                     fillMode: Image.Pad
                     horizontalAlignment: Image.AlignHCenter
@@ -94,6 +94,10 @@ ApplicationWindow {
         }
     }
 
+    ListModel {
+        id: launcherModel
+    }
+
     Drawer {
         id: drawer
         width: Math.min(window.width, 480) / 3 * 2
@@ -102,43 +106,61 @@ ApplicationWindow {
 
         ListView {
             id: listView
-
             focus: true
             currentIndex: -1
             anchors.fill: parent
-
             delegate: ItemDelegate {
                 width: parent.width
-                text: model.title
+                text: model.name
                 highlighted: ListView.isCurrentItem
                 onClicked: {
                     listView.currentIndex = index
-                    stackView.push(model.source)
+                    stackView.push(model.url)
                     drawer.close()
                 }
             }
-
-            model: ListModel {
-                ListElement { title: "Manual Operation"; source: "ManualOperation.qml" }
-                ListElement { title: "Random Operation"; source: "RandomOperation.qml" }
-                ListElement { title: "Playback"; source: "Playback.qml" }
-                ListElement { title: "System Monitor"; source: "SystemMonitorView.qml" }
-                ListElement { title: "Video Recoder"; source: "VideoRecorderView.qml" }
-                ListElement { title: "Screenshot"; source: "ScreenshotView.qml" }
-            }
-
+            model: launcherModel
             ScrollIndicator.vertical: ScrollIndicator { }
         }
     }
 
-    TestCase {
-        id: testCase
+    Item {
+        id: launcherList
+        ListView {
+            width: 480
+            height: parent.height
+            anchors.horizontalCenter: parent.horizontalCenter
+            clip: true
+            delegate: LauncherDelegate{
+                onClicked: {
+                    listView.currentIndex = index
+                    stackView.push(model.url)
+                }
+            }
+            model: launcherModel
+            ScrollIndicator.vertical: ScrollIndicator { }
+        }
+    }
+
+    function addLauncher(name, desc, icon, url)
+    {
+        launcherModel.append({"name":name, "description":desc, "icon": icon, "url":url})
     }
 
     StackView {
         id: stackView
         anchors.fill: parent
-        initialItem: testCase
+        initialItem: launcherList
+    }
+
+    Component.onCompleted: {
+        addLauncher("Test Case", "111111111111111111111111111111111111", Qt.resolvedUrl("images/testcase.png"), Qt.resolvedUrl("TestCaseActivity.qml"));
+        addLauncher("Manual Operation", "U2222222222222222222222222222222", Qt.resolvedUrl("images/man.png"),  Qt.resolvedUrl("ManualOperationActivity.qml"));
+        addLauncher("Automatic Operation", "3333333333333333333333333333333", Qt.resolvedUrl("images/robot.png"), Qt.resolvedUrl("AutomaticOperationActivity.qml"));
+        addLauncher("Video Recoder", "44444444444444444444444444444444444", Qt.resolvedUrl("images/video.png"), Qt.resolvedUrl("VideoRecorderActivity.qml"));
+        addLauncher("Screenshot", "55555555555555555555555555555555555555", Qt.resolvedUrl("images/camera.png"), Qt.resolvedUrl("ScreenshotActivity.qml"));
+        addLauncher("System Monitor", "55555555555555555555555555555555555555", Qt.resolvedUrl("images/system.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
+        addLauncher("File Browser", "55555555555555555555555555555555555555", Qt.resolvedUrl("images/file-browser.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
     }
 
     Dialog {

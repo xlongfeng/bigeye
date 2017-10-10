@@ -79,7 +79,7 @@ Pane {
 
             IconButton {
                 text: "snapshot"
-                icon: "images/camera.png"
+                icon: "images/shutter.png"
                 opacity: 0.4
                 onPressed: {
                     animateWidth.start()
