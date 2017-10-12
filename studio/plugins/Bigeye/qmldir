@@ -1,4 +1,5 @@
 module Bigeye
+Fishbone 1.0 Fishbone.qml
 TestCaseModel 1.0 TestCaseModel.qml
 KeyEventModel 1.0 KeyEventModel.qml
 Controller 1.0 Controller.qml

@@ -26,6 +26,7 @@ from PyQt5.QtCore import Qt, QCoreApplication, QUrl
 from PyQt5.QtGui import QGuiApplication
 from PyQt5.QtQml import qmlRegisterType, QQmlApplicationEngine
 
+from fishbone import *
 from snapshot import *
 from video import *
 from testcasemodel import *
@@ -40,7 +41,8 @@ if __name__ == '__main__':
 
     QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     app = QGuiApplication(sys.argv)
-    
+
+    qmlRegisterType(Fishbone, "Bigeye", 1, 0, "Fishbone")
     qmlRegisterType(TestCaseModel, "Bigeye", 1, 0, "TestCaseModel")
     qmlRegisterType(KeyEventModel, "Bigeye", 1, 0, "KeyEventModel")
     qmlRegisterType(ProcessModel, "Bigeye", 1, 0, "ProcessModel")

@@ -21,6 +21,8 @@ import QtQuick 2.7
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 
+import Bigeye 1.0
+
 ApplicationWindow {
     id: window
 
@@ -29,9 +31,26 @@ ApplicationWindow {
     minimumHeight: 960
     title: qsTr("Bigeye Studio")
 
+    Fishbone {
+        id: fishbone
+        property var statusSource: [
+            "images/status/cancel.png",
+            "images/status/disconnected.png",
+            "images/status/connecting.png",
+            "images/status/connected.png"
+        ]
+        onStatusChanged: {
+            status.source = statusSource[fishbone.status]
+        }
+
+        Component.onCompleted: {
+            status.source = statusSource[fishbone.status]
+        }
+    }
+
     header: ToolBar {
         RowLayout {
-            spacing: 20
+            spacing: 8
             anchors.fill: parent
 
             ToolButton {
@@ -63,6 +82,17 @@ ApplicationWindow {
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
                 Layout.fillWidth: true
+            }
+
+            ToolButton {
+                contentItem: Image {
+                    id: status
+                    sourceSize.width: 24
+                    sourceSize.height: 24
+                    fillMode: Image.Pad
+                    horizontalAlignment: Image.AlignHCenter
+                    verticalAlignment: Image.AlignVCenter
+                }
             }
 
             ToolButton {

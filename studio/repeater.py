@@ -22,6 +22,7 @@
 #############################################################################
 
 
+from enum import Enum
 import usb1
 
 from PyQt5.QtCore import (pyqtProperty, pyqtSignal, pyqtSlot,
@@ -33,21 +34,85 @@ from singletonobject import *
 
 
 class _RepeaterLoop(QThread):
+    deviceRemoved = pyqtSignal()
+
     def __init__(self, parent=None):
         super(_RepeaterLoop, self).__init__(parent)
 
+    @staticmethod
+    def receiveDataCallback(transfer):
+        repeater = transfer.getUserData()
+        status = transfer.getStatus()
+        if status == usb1.TRANSFER_COMPLETED:
+            repeater.receiveData(transfer.getBuffer()[:transfer.getActualLength()])
+            transfer.submit()
+        elif status == usb1.TRANSFER_ERROR or status == usb1.TRANSFER_TIMED_OUT:
+            transfer.submit()
+        elif status == usb1.TRANSFER_CANCELLED:
+            pass
+        elif status == usb1.TRANSFER_STALL:
+            try:
+                repeater.getUSBHandle().clearHalt(transfer.getEndpoint())
+                transfer.submit()
+            except usb1.USBErrorNoDevice:
+                print("device removed")
+                repeater.daemon().requestInterruption()
+                repeater.daemon().deviceRemoved.emit()
+        elif status == usb1.TRANSFER_NO_DEVICE:
+            repeater.daemon().requestInterruption()
+            repeater.daemon().deviceRemoved.emit()
+        elif status == usb1.TRANSFER_OVERFLOW:
+            pass
+
+    @staticmethod
+    def sendDataCallback(transfer):
+        repeater = transfer.getUserData()
+        status = transfer.getStatus()
+        if status == usb1.TRANSFER_COMPLETED:
+            repeater.reclaimURB(transfer)
+        elif status == usb1.TRANSFER_ERROR or status == usb1.TRANSFER_TIMED_OUT:
+            repeater.reclaimURB(transfer)
+        elif status == usb1.TRANSFER_CANCELLED:
+            repeater.reclaimURB(transfer)
+        elif status == usb1.TRANSFER_STALL:
+            repeater.getUSBHandle().clearHalt(transfer.getEndpoint())
+            transfer.submit()
+        elif status == usb1.TRANSFER_NO_DEVICE:
+            repeater.daemon().requestInterruption()
+            repeater.daemon().deviceRemoved.emit()
+        elif status == usb1.TRANSFER_OVERFLOW:
+            repeater.reclaimURB(transfer)
+
     def run(self):
         context = self.parent().getUSBContext()
-        transfer_list = self.parent().getTransferList()
-
-        while any(x.isSubmitted() for x in transfer_list):
+        print("usb daemon thread enter")
+        while not self.isInterruptionRequested():
             try:
                 context.handleEvents()
+                # print("usb daemon thread handle")
             except usb1.USBErrorInterrupted:
                 print(" exception: usb error interrupted")
+        print("usb daemon thread exit")
 
 
 class Repeater(SingletonObject):
+    ConnectStatus = Enum('Status', "disconnected connected")
+    _status = ConnectStatus.disconnected
+
+    statusChanged = pyqtSignal()
+
+    @pyqtProperty(ConnectStatus, notify=statusChanged)
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, status):
+        self._status = status
+        self.statusChanged.emit()
+
+    def isConnected(self):
+        return self._status is self.ConnectStatus.connected
+    
     dataArrived = pyqtSignal(bytearray, name='dataArrived')
     snapshotArrived = pyqtSignal(QImage)
     videoFrameArrived = pyqtSignal(QImage)
@@ -62,7 +127,10 @@ class Repeater(SingletonObject):
     _out_ep = None
     _in_packet_size = 0
     _out_packet_size = 0
-    _transfer_list = []
+
+    _urb_free_list = []
+    _urb_busy_list = []
+
     _mutex = QMutex()
     _datagram = QByteArray()
 
@@ -76,13 +144,41 @@ class Repeater(SingletonObject):
         context = usb1.USBContext()
         context.open()
         self._context = context
+
+        self.dataArrived.connect(self.onDataArrived)
+
         self._loop = _RepeaterLoop(self)
+        self._loop.deviceRemoved.connect(self.closeDevice)
+
+        self._openDeviceTimer = QTimer(self)
+        self._openDeviceTimer.timeout.connect(self.openDevice)
+        self._openDeviceTimer.start(1000)
+
+    def daemon(self):
+        return self._loop
+
+    @pyqtSlot()
+    def closeDevice(self):
+        print("close device")
+        self.status = self.ConnectStatus.disconnected
+        if self._handle is not None:
+            self._handle.releaseInterface(0)
+            self._device = None
+            self._handle = None
+        self.destroyURB()
+        self._openDeviceTimer.start(1000)
+
+    @pyqtSlot()
+    def openDevice(self):
+        context = self._context
         handle = context.openByVendorIDAndProductID(
             0x2009,
             0x0805,
             skip_on_error=True,
         )
         if handle is not None:
+            print("usb open device success")
+            self._openDeviceTimer.stop()
             self._handle = handle
             device = handle.getDevice()
             self._device = device
@@ -96,9 +192,19 @@ class Repeater(SingletonObject):
                     self._out_packet_size = endpoint.getMaxPacketSize()
             self._interface = handle.claimInterface(0)
             self.startReceive()
+            self._loop.start()
+            self.status = self.ConnectStatus.connected
 
     def register(self, delegate):
         self._delegates.append(delegate)
+
+    def reclaimURB(self, transfer):
+        self._urb_busy_list.remove(transfer)
+        self._urb_free_list.append(transfer)
+
+    def destroyURB(self):
+        self._urb_busy_list = []
+        self._urb_free_list = []
 
     def getRequestBlock(self):
         block = QByteArray()
@@ -108,21 +214,23 @@ class Repeater(SingletonObject):
         return block, ostream
 
     def submitRequestBlock(self, block):
+        if self._status is self.ConnectStatus.disconnected:
+            return
         block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
+        if len(self._urb_free_list) > 0:
+            transfer = self._urb_free_list[0]
+            self._urb_free_list.remove(transfer)
+        else:
+            transfer = self._handle.getTransfer()
+        transfer.setBulk(self._out_ep, block, callback=_RepeaterLoop.sendDataCallback, user_data=self, timeout=100)
         transfer.submit()
-        self._transfer_list.append(transfer)
-        self._loop.start()
+        self._urb_busy_list.append(transfer)
 
     def getUSBContext(self):
         return self._context
 
     def getUSBHandle(self):
         return self._handle
-
-    def getTransferList(self):
-        return self._transfer_list
 
     def onDataArrived(self, data):
         self._mutex.lock()
@@ -188,7 +296,7 @@ class Repeater(SingletonObject):
                 if not handled:
                     print("Unhandled response:", response)
         else:
-            print("onDisposed failed:", block.size())
+            print("onDisposed failed: block size", block.size())
 
     def onDisposedExtendedData(self):
         for delegate in self._delegates:
@@ -205,51 +313,16 @@ class Repeater(SingletonObject):
     def receiveData(self, data):
         self.dataArrived.emit(data)
 
-    @staticmethod
-    def receiveDataCallback(transfer):
-        repeater = transfer.getUserData()
-        status = transfer.getStatus()
-        if status == usb1.TRANSFER_COMPLETED:
-            repeater.receiveData(transfer.getBuffer()[:transfer.getActualLength()])
-            transfer.submit()
-        elif status == usb1.TRANSFER_ERROR or status == usb1.TRANSFER_TIMED_OUT:
-            transfer.submit()
-        elif status == usb1.TRANSFER_CANCELLED:
-            pass
-        elif status == usb1.TRANSFER_STALL:
-            repeater.getUSBHandle().clearHalt(transfer.getEndpoint())
-            transfer.submit()
-        elif status == usb1.TRANSFER_NO_DEVICE:
-            pass
-        elif status == usb1.TRANSFER_OVERFLOW:
-            pass
-
     def startReceive(self):
-        self.dataArrived.connect(self.onDataArrived)
         transfer = self._handle.getTransfer()
-        transfer.setBulk(self._in_ep, self._in_packet_size * 32, callback=self.receiveDataCallback, user_data=self)
+        transfer.setBulk(self._in_ep, self._in_packet_size * 32, callback=_RepeaterLoop.receiveDataCallback, user_data=self)
         transfer.submit()
-        self._transfer_list.append(transfer)
-        self._loop.start()
+        self._urb_busy_list.append(transfer)
 
-    @staticmethod
-    def sendDataCallback(transfer):
-        repeater = transfer.getUserData()
-        status = transfer.getStatus()
-        if status == usb1.TRANSFER_COMPLETED:
-            print("the transfer need to be free")
-        elif status == usb1.TRANSFER_ERROR or status == usb1.TRANSFER_TIMED_OUT:
-            transfer.submit()
-        elif status == usb1.TRANSFER_CANCELLED:
-            pass
-        elif status == usb1.TRANSFER_STALL:
-            repeater.getUSBHandle().clearHalt(transfer.getEndpoint())
-            transfer.submit()
-        elif status == usb1.TRANSFER_NO_DEVICE:
-            pass
-        elif status == usb1.TRANSFER_OVERFLOW:
-            pass
+    def stopReceive(self):
+        pass
 
+    """
     def reqDaemonVersion(self):
         block = QByteArray()
         ostream = QDataStream(block, QIODevice.WriteOnly)
@@ -261,7 +334,7 @@ class Repeater(SingletonObject):
         transfer = self._handle.getTransfer()
         transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
         transfer.submit()
-        self._transfer_list.append(transfer)
+        self._urb_busy_list.append(transfer)
         self._loop.start()
 
     def startDaemon(self):
@@ -277,7 +350,7 @@ class Repeater(SingletonObject):
         transfer = self._handle.getTransfer()
         transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
         transfer.submit()
-        self._transfer_list.append(transfer)
+        self._urb_busy_list.append(transfer)
         self._loop.start()
 
     def stopDaemon(self):
@@ -291,8 +364,9 @@ class Repeater(SingletonObject):
         transfer = self._handle.getTransfer()
         transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
         transfer.submit()
-        self._transfer_list.append(transfer)
+        self._urb_busy_list.append(transfer)
         self._loop.start()
+    """
 
     @staticmethod
     def _escape(data):

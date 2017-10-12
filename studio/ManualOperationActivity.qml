@@ -29,21 +29,26 @@ Pane {
     state: "stopped"
 
     Controller {
-        id: keyLogger
+        id: controller
     }
 
     ColumnLayout {
         anchors.fill: parent
 
         RowLayout {
-            Image {
-                width: 800
-                height: 600
-                source: keyLogger.preview
+            Rectangle {
+                width: 960
+                height: 768
+                Image {
+                    width: 800
+                    height: 600
+                    anchors.centerIn: parent
+                    source: controller.preview
+                }
             }
 
             KeyLoggerView {
-                model: keyLogger.model
+                model: controller.model
 
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -68,10 +73,10 @@ Pane {
                 onPressed: {
                     if (manualOperation.state === "stopped") {
                         manualOperation.state = "started"
-                        keyLogger.start(testCase.text)
+                        controller.start(testCase.text)
                     } else {
                         manualOperation.state = "stopped"
-                        keyLogger.stop()
+                        controller.stop()
                     }
                 }
                 Layout.minimumWidth: 96
@@ -85,11 +90,11 @@ Pane {
                 id: buttonPower
                 text: "Power"
                 icon: "images/power.png"
-                onPressed: keyLogger.report(text, Qt.Key_F9, true)
-                onReleased: keyLogger.report(text, Qt.Key_F9, false)
+                onPressed: controller.report(text, Qt.Key_F9, true)
+                onReleased: controller.report(text, Qt.Key_F9, false)
                 onPressAndHold: {
-                    keyLogger.report(text + "Hold", Qt.Key_F10, true)
-                    keyLogger.report(text, Qt.Key_F10, false)
+                    controller.report(text + "Hold", Qt.Key_F10, true)
+                    controller.report(text, Qt.Key_F10, false)
                 }
             }
             Item {
@@ -100,36 +105,36 @@ Pane {
                 id: buttonF4
                 text: "F4"
                 icon: "images/f4.png"
-                onPressed: keyLogger.report(text, Qt.Key_F4, true)
-                onReleased: keyLogger.report(text, Qt.Key_F4, false)
+                onPressed: controller.report(text, Qt.Key_F4, true)
+                onReleased: controller.report(text, Qt.Key_F4, false)
             }
             IconButton {
                 id: buttonF5
                 text: "F5"
                 icon: "images/f5.png"
-                onPressed: keyLogger.report(text, Qt.Key_F5, true)
-                onReleased: keyLogger.report(text, Qt.Key_F5, false)
+                onPressed: controller.report(text, Qt.Key_F5, true)
+                onReleased: controller.report(text, Qt.Key_F5, false)
             }
             IconButton {
                 id: buttonF6
                 text: "F6"
                 icon: "images/f6.png"
-                onPressed: keyLogger.report(text, Qt.Key_F6, true)
-                onReleased: keyLogger.report(text, Qt.Key_F6, false)
+                onPressed: controller.report(text, Qt.Key_F6, true)
+                onReleased: controller.report(text, Qt.Key_F6, false)
             }
             IconButton {
                 id: buttonF7
                 text: "F7"
                 icon: "images/f7.png"
-                onPressed: keyLogger.report(text, Qt.Key_F7, true)
-                onReleased: keyLogger.report(text, Qt.Key_F7, false)
+                onPressed: controller.report(text, Qt.Key_F7, true)
+                onReleased: controller.report(text, Qt.Key_F7, false)
             }
             IconButton {
                 id: buttonF8
                 text: "F8"
                 icon: "images/f8.png"
-                onPressed: keyLogger.report(text, Qt.Key_F8, true)
-                onReleased: keyLogger.report(text, Qt.Key_F8, false)
+                onPressed: controller.report(text, Qt.Key_F8, true)
+                onReleased: controller.report(text, Qt.Key_F8, false)
             }
             Item {
                 Layout.fillHeight: true
@@ -139,22 +144,22 @@ Pane {
                 id: buttonLeft
                 text: "Left"
                 icon: "images/left.png"
-                onPressed: keyLogger.report(text, Qt.Key_Left, true)
-                onReleased: keyLogger.report(text, Qt.Key_Left, false)
+                onPressed: controller.report(text, Qt.Key_Left, true)
+                onReleased: controller.report(text, Qt.Key_Left, false)
             }
             IconButton {
                 id: buttonRight
                 text: "Right"
                 icon: "images/right.png"
-                onPressed: keyLogger.report(text, Qt.Key_Right, true)
-                onReleased: keyLogger.report(text, Qt.Key_Right, false)
+                onPressed: controller.report(text, Qt.Key_Right, true)
+                onReleased: controller.report(text, Qt.Key_Right, false)
             }
             IconButton {
                 id: buttonEnter
                 text: "Enter"
                 icon: "images/enter.png"
-                onPressed: keyLogger.report(text, Qt.Key_Enter, true)
-                onReleased: keyLogger.report(text, Qt.Key_Enter, false)
+                onPressed: controller.report(text, Qt.Key_Enter, true)
+                onReleased: controller.report(text, Qt.Key_Enter, false)
             }
 
             Layout.maximumHeight: buttonPower.implicitHeight + 10
