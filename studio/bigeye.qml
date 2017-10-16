@@ -27,7 +27,7 @@ ApplicationWindow {
     id: window
 
     visible: true
-    minimumWidth: 1280
+    minimumWidth: 1440
     minimumHeight: 960
     title: qsTr("Bigeye Studio")
 

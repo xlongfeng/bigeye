@@ -32,42 +32,45 @@ Pane {
         id: controller
     }
 
-    ColumnLayout {
+    GridLayout {
+        columns: 2
         anchors.fill: parent
 
-        RowLayout {
-            Rectangle {
-                width: 960
-                height: 768
-                Image {
-                    width: 800
-                    height: 600
-                    anchors.centerIn: parent
-                    source: controller.preview
-                }
+        MonitorScreen {
+            controller: controller
+
+            Layout.row: 0
+            Layout.column: 0
+        }
+
+        MonitorPanel {
+            state: manualOperation.state
+            controller: controller
+
+            Layout.row: 1
+            Layout.column: 0
+        }
+
+        ColumnLayout {
+
+            ProcessInfoFragment {
+                Layout.fillWidth: true
+                Layout.minimumHeight: 320
             }
 
             KeyLoggerView {
                 model: controller.model
-
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.maximumWidth: 256
-                Layout.bottomMargin: 10
             }
-        }
 
-        RowLayout {
-            Label {
-                text: qsTr("Test Case:")
-            }
             TextField {
                 id: testCase
                 selectByMouse: true
                 text: qsTr("Manual Operation")
-
                 Layout.fillWidth: true
             }
+
             Button {
                 id: recordButton
                 onPressed: {
@@ -79,90 +82,13 @@ Pane {
                         controller.stop()
                     }
                 }
-                Layout.minimumWidth: 96
-            }
-
-            Layout.maximumHeight: recordButton.implicitHeight + 10
-        }
-
-        RowLayout {
-            IconButton {
-                id: buttonPower
-                text: "Power"
-                icon: "images/power.png"
-                onPressed: controller.report(text, Qt.Key_F9, true)
-                onReleased: controller.report(text, Qt.Key_F9, false)
-                onPressAndHold: {
-                    controller.report(text + "Hold", Qt.Key_F10, true)
-                    controller.report(text, Qt.Key_F10, false)
-                }
-            }
-            Item {
-                Layout.fillHeight: true
                 Layout.fillWidth: true
-            }
-            IconButton {
-                id: buttonF4
-                text: "F4"
-                icon: "images/f4.png"
-                onPressed: controller.report(text, Qt.Key_F4, true)
-                onReleased: controller.report(text, Qt.Key_F4, false)
-            }
-            IconButton {
-                id: buttonF5
-                text: "F5"
-                icon: "images/f5.png"
-                onPressed: controller.report(text, Qt.Key_F5, true)
-                onReleased: controller.report(text, Qt.Key_F5, false)
-            }
-            IconButton {
-                id: buttonF6
-                text: "F6"
-                icon: "images/f6.png"
-                onPressed: controller.report(text, Qt.Key_F6, true)
-                onReleased: controller.report(text, Qt.Key_F6, false)
-            }
-            IconButton {
-                id: buttonF7
-                text: "F7"
-                icon: "images/f7.png"
-                onPressed: controller.report(text, Qt.Key_F7, true)
-                onReleased: controller.report(text, Qt.Key_F7, false)
-            }
-            IconButton {
-                id: buttonF8
-                text: "F8"
-                icon: "images/f8.png"
-                onPressed: controller.report(text, Qt.Key_F8, true)
-                onReleased: controller.report(text, Qt.Key_F8, false)
-            }
-            Item {
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-            }
-            IconButton {
-                id: buttonLeft
-                text: "Left"
-                icon: "images/left.png"
-                onPressed: controller.report(text, Qt.Key_Left, true)
-                onReleased: controller.report(text, Qt.Key_Left, false)
-            }
-            IconButton {
-                id: buttonRight
-                text: "Right"
-                icon: "images/right.png"
-                onPressed: controller.report(text, Qt.Key_Right, true)
-                onReleased: controller.report(text, Qt.Key_Right, false)
-            }
-            IconButton {
-                id: buttonEnter
-                text: "Enter"
-                icon: "images/enter.png"
-                onPressed: controller.report(text, Qt.Key_Enter, true)
-                onReleased: controller.report(text, Qt.Key_Enter, false)
+                Layout.bottomMargin: 10
             }
 
-            Layout.maximumHeight: buttonPower.implicitHeight + 10
+            Layout.row: 0
+            Layout.column: 1
+            Layout.rowSpan: 2
         }
     }
 
@@ -171,29 +97,11 @@ Pane {
             name: "started"
             PropertyChanges { target: testCase; enabled: false }
             PropertyChanges { target: recordButton; text: qsTr("Stop") }
-            PropertyChanges { target: buttonPower; enabled: true }
-            PropertyChanges { target: buttonF4; enabled: true }
-            PropertyChanges { target: buttonF5; enabled: true }
-            PropertyChanges { target: buttonF6; enabled: true }
-            PropertyChanges { target: buttonF7; enabled: true }
-            PropertyChanges { target: buttonF8; enabled: true }
-            PropertyChanges { target: buttonLeft; enabled: true }
-            PropertyChanges { target: buttonRight; enabled: true }
-            PropertyChanges { target: buttonEnter; enabled: true }
         },
         State {
             name: "stopped"
             PropertyChanges { target: testCase; enabled: true }
             PropertyChanges { target: recordButton; text: qsTr("Start") }
-            PropertyChanges { target: buttonPower; enabled: false }
-            PropertyChanges { target: buttonF4; enabled: false }
-            PropertyChanges { target: buttonF5; enabled: false }
-            PropertyChanges { target: buttonF6; enabled: false }
-            PropertyChanges { target: buttonF7; enabled: false }
-            PropertyChanges { target: buttonF8; enabled: false }
-            PropertyChanges { target: buttonLeft; enabled: false }
-            PropertyChanges { target: buttonRight; enabled: false }
-            PropertyChanges { target: buttonEnter; enabled: false }
         }
     ]
 }

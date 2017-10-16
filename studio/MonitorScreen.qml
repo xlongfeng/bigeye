@@ -19,22 +19,21 @@
 
 import QtQuick 2.7
 import QtQuick.Controls 2.2
+import QtQuick.Layouts 1.3
 
-Button {
-    id: control
-
-    property alias icon: image.source
-    property int key
-
-    implicitWidth: image.implicitWidth
-    implicitHeight: image.implicitHeight
-
-    contentItem: Image {
+Rectangle {
+    property var controller
+    color: "gray"
+    border.color: "dimgray"
+    border.width: 5
+    radius: 10
+    width: 960 + 20
+    height: 768 + 20
+    Image {
         id: image
-        sourceSize: "96x96"
-        opacity: enabled ? 1.0 : 0.25
-        Behavior on opacity {
-            NumberAnimation { duration: 200 }
-        }
+        width: 800
+        height: 600
+        anchors.centerIn: parent
+        source: controller.preview
     }
 }
