@@ -53,6 +53,11 @@ Pane {
 
         ColumnLayout {
 
+            CpuInfoFragment {
+                Layout.fillWidth: true
+                Layout.minimumHeight: 240
+            }
+
             ProcessInfoFragment {
                 Layout.fillWidth: true
                 Layout.minimumHeight: 320

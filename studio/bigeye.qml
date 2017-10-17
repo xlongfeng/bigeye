@@ -184,13 +184,13 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        addLauncher("Test Case", "111111111111111111111111111111111111", Qt.resolvedUrl("images/testcase.png"), Qt.resolvedUrl("TestCaseActivity.qml"));
-        addLauncher("Manual Operation", "U2222222222222222222222222222222", Qt.resolvedUrl("images/man.png"),  Qt.resolvedUrl("ManualOperationActivity.qml"));
-        addLauncher("Automatic Operation", "3333333333333333333333333333333", Qt.resolvedUrl("images/robot.png"), Qt.resolvedUrl("AutomaticOperationActivity.qml"));
-        addLauncher("Video Recoder", "44444444444444444444444444444444444", Qt.resolvedUrl("images/video.png"), Qt.resolvedUrl("VideoRecorderActivity.qml"));
-        addLauncher("Screenshot", "55555555555555555555555555555555555555", Qt.resolvedUrl("images/camera.png"), Qt.resolvedUrl("ScreenshotActivity.qml"));
-        addLauncher("System Monitor", "55555555555555555555555555555555555555", Qt.resolvedUrl("images/system.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
-        addLauncher("File Browser", "55555555555555555555555555555555555555", Qt.resolvedUrl("images/file-browser.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
+        addLauncher("Test Case", "Manage and replay test cases", Qt.resolvedUrl("images/testcase.png"), Qt.resolvedUrl("TestCaseActivity.qml"));
+        addLauncher("Manual Operation", "Manual manipulation monitor and record process", Qt.resolvedUrl("images/man.png"),  Qt.resolvedUrl("ManualOperationActivity.qml"));
+        addLauncher("Automatic Operation", "Random manipulation monitor and record process", Qt.resolvedUrl("images/robot.png"), Qt.resolvedUrl("AutomaticOperationActivity.qml"));
+        addLauncher("Video Recoder", "Screen record for all-purpose", Qt.resolvedUrl("images/video.png"), Qt.resolvedUrl("VideoRecorderActivity.qml"));
+        addLauncher("Screenshot", "Screen capture for all-purpose", Qt.resolvedUrl("images/camera.png"), Qt.resolvedUrl("ScreenshotActivity.qml"));
+        addLauncher("System Monitor", "Supervise system status", Qt.resolvedUrl("images/system.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
+        addLauncher("File Browser", "Manage monitor filesystem", Qt.resolvedUrl("images/file-browser.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
     }
 
     Dialog {

@@ -46,12 +46,12 @@ class ProcessModel(QAbstractListModel):
         self._timer.timeout.connect(self.onUpdate)
         self._timer.start(1000)
 
-        self._processes.append([1000, "abc", 1, 20, 1000])
-        self._processes.append([1001, "abc323", 1, 10, 2000])
-        self._processes.append([1002, "ab1234c", 1, 20, 3000])
-        self._processes.append([1003, "adfabc", 1, 0, 4000])
-        self._processes.append([1004, "ewewebc", 1, 0, 5000])
-        self._processes.append([1005, "eedfsbc", 1, 0, 6000])
+        self._processes.append([1000, "/appdir/ut5000", 1, 20, 1000])
+        self._processes.append([1001, "Xfbdev", 1, 10, 2000])
+        self._processes.append([1002, "top", 1, 20, 3000])
+        self._processes.append([1003, "/usr/sbin/inetd", 1, 0, 4000])
+        self._processes.append([1004, "klogd -c 7", 1, 0, 5000])
+        self._processes.append([1005, "syslogd -l 8 -S -b 20 -O /logdir/m", 1, 0, 6000])
 
     @pyqtSlot()
     def onUpdate(self):

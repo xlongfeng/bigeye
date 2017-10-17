@@ -86,12 +86,4 @@ ListView {
 
         }
     }
-
-    onWidthChanged: {
-        console.log(width)
-    }
-
-    Component.onCompleted: {
-        console.log(width)
-    }
 }
