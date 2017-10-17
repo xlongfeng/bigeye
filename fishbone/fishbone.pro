@@ -6,7 +6,7 @@
 
 QT       -= gui
 
-TARGET = bigeye
+TARGET = fishbone
 TEMPLATE = lib
 CONFIG += staticlib
 

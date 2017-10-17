@@ -2,7 +2,7 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     qextserialport \
-    lib \
+    fishbone \
     repeater \
     launcher \
     daemon \
