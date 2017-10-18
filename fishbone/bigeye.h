@@ -33,6 +33,7 @@ public:
     explicit Bigeye(QObject *parent = Q_NULLPTR);
 
 protected:
+    QString& getDeviceType() const;
     int getFramebufferWidth() const
     {
         return framebufferWidth;

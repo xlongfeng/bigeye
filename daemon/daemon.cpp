@@ -253,14 +253,18 @@ void Daemon::onDataArrived(const QByteArray &bytes)
     dispose(bytes);
 }
 
-void Daemon::version(QDataStream &stream)
+void Daemon::queryDevice(QDataStream &stream)
 {
     QByteArray block;
     QDataStream istream(&block, QIODevice::WriteOnly);
     istream.setVersion(QDataStream::Qt_4_8);
     istream << QString("Bigeye");
-    istream << QString("respVersion");
-    istream << QString("daemon") << QString("1.0");
+    istream << QString("respQueryDevice");
+    istream << QString("daemon")
+            << getDeviceType()
+            << getFramebufferWidth()
+            << getFramebufferHeight()
+            << getFramebufferBitDepth();
 
     thread->tramsmitBytes(escape(block));
 }
@@ -288,22 +292,6 @@ void Daemon::snapshot(QDataStream &stream)
     Q_UNUSED(stream)
 
     QByteArray &buffer = getFramebuffer();
-
-    QByteArray block;
-    QDataStream istream(&block, QIODevice::WriteOnly);
-    istream.setVersion(QDataStream::Qt_4_8);
-    istream << QString("Bigeye");
-    istream << QString("respSnapshot");
-    istream << getFramebufferWidth()
-            << getFramebufferHeight()
-            << getFramebufferBitDepth();
-    bool compressed = false;
-    if (compressed) {
-        buffer = qCompress(buffer);
-    }
-    istream << compressed << buffer.size();
-
-    thread->tramsmitBytes(escape(block));
     sendExtendedData("snapshot", buffer);
 }
 
@@ -312,22 +300,6 @@ void Daemon::videoFrame(QDataStream &stream)
     Q_UNUSED(stream)
 
     QByteArray &buffer = getFramebuffer();
-
-    QByteArray block;
-    QDataStream istream(&block, QIODevice::WriteOnly);
-    istream.setVersion(QDataStream::Qt_4_8);
-    istream << QString("Bigeye");
-    istream << QString("respVideoFrame");
-    istream << getFramebufferWidth()
-            << getFramebufferHeight()
-            << getFramebufferBitDepth();
-    bool compressed = false;
-    if (compressed) {
-        buffer = qCompress(buffer);
-    }
-    istream << compressed << buffer.size();
-
-    thread->tramsmitBytes(escape(block));
     sendExtendedData("videoFrame", buffer);
 }
 

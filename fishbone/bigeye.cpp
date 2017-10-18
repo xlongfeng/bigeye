@@ -23,6 +23,7 @@
 #include <linux/fb.h>
 
 #include <QDataStream>
+#include <QFile>
 #include <QDebug>
 
 #include "bigeye.h"
@@ -114,6 +115,24 @@ QByteArray Bigeye::unescape(const QByteArray &data)
         }
     }
     return data;
+}
+
+QString& Bigeye::getDeviceType() const
+{
+    QString device = "unkonwn";
+    QFile cmdline("/proc/cmdline");
+    if (!cmdline.open(QIODevice::ReadOnly | QIODevice::Text))
+        return device;
+
+    QByteArray data = cmdline.readAll();
+    int start = data.indexOf("machine=");
+    if (start != -1) {
+        start += strlen("machine=");
+        int end = data.indexOf(" ", start);
+        device = data.mid(start, end - start);
+    }
+
+    return device;
 }
 
 QByteArray& Bigeye::getFramebuffer()
