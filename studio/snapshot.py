@@ -119,6 +119,17 @@ class SnapshotProvider(QQuickImageProvider):
 
 
 class Screenshot(QObject):
+    _width = 0
+    _height = 0
+
+    @pyqtProperty(int)
+    def width(self):
+        return self._width
+
+    @pyqtProperty(int)
+    def height(self):
+        return self._height
+
     _image = None
 
     imageChanged = pyqtSignal()
@@ -135,10 +146,10 @@ class Screenshot(QObject):
     def __init__(self, parent=None):
         super(Screenshot, self).__init__(parent)
         self._fishboneConnector = FishboneConnector.instance()
+        self._width = self._fishboneConnector.screenWidth
+        self._height = self._fishboneConnector.screenHeight
         self._snapshot = Snapshot.instance()
-        self._snapshot.setResolution(
-            self._fishboneConnector.screenWidth,
-            self._fishboneConnector.screenHeight)
+        self._snapshot.setResolution(self._width, self._height)
         self._snapshot.imageChanged.connect(self.onImageChanged)
         self._timer = QTimer()
         self._timer.timeout.connect(self.snip)

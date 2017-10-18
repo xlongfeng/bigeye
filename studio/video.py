@@ -148,8 +148,16 @@ class VideoProvider(QQuickImageProvider):
 
 
 class ScreenRecorder(QObject):
-    def __init__(self, parent=None):
-        super(ScreenRecorder, self).__init__(parent)
+    _width = 0
+    _height = 0
+
+    @pyqtProperty(int)
+    def width(self):
+        return self._width
+
+    @pyqtProperty(int)
+    def height(self):
+        return self._height
 
     _fame = None
 
@@ -167,15 +175,15 @@ class ScreenRecorder(QObject):
     def __init__(self, parent=None):
         super(ScreenRecorder, self).__init__(parent)
         self._fishboneConnector = FishboneConnector.instance()
+        self._width = self._fishboneConnector.screenWidth
+        self._height = self._fishboneConnector.screenHeight
         self._recorder = VideoRecorder.instance()
         self._recorder.frameChanged.connect(self.onFrameChanged)
 
     @pyqtSlot()
     def start(self):
         self._recorder.setFrameRate(5)
-        self._recorder.setResolution(
-            self._fishboneConnector.screenWidth,
-            self._fishboneConnector.screenHeight)
+        self._recorder.setResolution(self._width, self._height)
         self._recorder.setFilename("bigeye-video-{}".format(datetime.now().strftime("%Y%m%d%H%M%S")))
         self._recorder.start()
 

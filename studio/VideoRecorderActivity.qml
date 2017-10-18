@@ -34,78 +34,74 @@ Pane {
         id: recorder
     }
 
-    ColumnLayout {
-        anchors.fill: parent
+    MonitorScreen {
+        id: screen
+        source: recorder.frame
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
 
-        Image {
-            id: thumbnail
-            width: 800
-            height: 600
-            source: recorder.frame
+        Label {
+            id: timekeeper
+            text: "timekeeper"
+            color: "red"
+            opacity: 0.5
+            font.pixelSize: 32
+            anchors.top: screen.top
+            anchors.topMargin: (screen.height - recorder.height) / 2 + 32
+            anchors.right: screen.right
+            anchors.rightMargin: (screen.width - recorder.width) / 2 + 32
 
-            Label {
-                id: timekeeper
-                text: "timekeeper"
-                color: "red"
-                opacity: 0.5
-                font.pixelSize: 32
-                anchors.top: thumbnail.top
-                anchors.topMargin: 32
-                anchors.right: thumbnail.right
-                anchors.rightMargin: 32
+            Timer {
+                id: timer
+                property int  elapse: -1
+                interval: 1000
+                repeat: true
+                onTriggered: {
+                    elapse += 1
+                }
+                onElapseChanged: {
+                    var sec = elapse % 60
+                    var min = (elapse - sec) / 60 % 60
+                    var hour = ((elapse - sec) / 60 - min) / 60
+                    sec = "0%1".arg(sec).slice(-2)
+                    min = "0%1".arg(min).slice(-2)
+                    hour = "0%1".arg(hour).slice(-2)
+                    timekeeper.text = "%1:%2:%3".arg(hour).arg(min).arg(sec)
+                }
+            }
+        }
 
-                Timer {
-                    id: timer
-                    property int  elapse: -1
-                    interval: 1000
-                    repeat: true
-                    onTriggered: {
-                        elapse += 1
-                    }
-                    onElapseChanged: {
-                        var sec = elapse % 60
-                        var min = (elapse - sec) / 60 % 60
-                        var hour = ((elapse - sec) / 60 - min) / 60
-                        sec = "0%1".arg(sec).slice(-2)
-                        min = "0%1".arg(min).slice(-2)
-                        hour = "0%1".arg(hour).slice(-2)
-                        timekeeper.text = "%1:%2:%3".arg(hour).arg(min).arg(sec)
-                    }
+        IconButton {
+            id: button
+            text: "recorder"
+            icon: "images/record-start.png"
+            opacity: 0.4
+            onPressed: {
+                if (view.state === "stopped") {
+                    view.state = "started"
+                    recorder.start()
+                    timer.elapse = 0
+                    timer.start()
+                } else {
+                    view.state = "stopped"
+                    recorder.stop()
+                    timer.stop()
+                    timer.elapse = -1
+                }
+            }
+            onHoveredChanged: {
+                if (hovered) {
+                    opacity = 0.8
+                } else {
+                    opacity = 0.4
                 }
             }
 
-            IconButton {
-                id: button
-                text: "recorder"
-                icon: "images/record-start.png"
-                opacity: 0.4
-                onPressed: {
-                    if (view.state === "stopped") {
-                        view.state = "started"
-                        recorder.start()
-                        timer.elapse = 0
-                        timer.start()
-                    } else {
-                        view.state = "stopped"
-                        recorder.stop()
-                        timer.stop()
-                        timer.elapse = -1
-                    }
-                }
-                onHoveredChanged: {
-                    if (hovered) {
-                        opacity = 0.8
-                    } else {
-                        opacity = 0.4
-                    }
-                }
+            anchors.horizontalCenter: screen.horizontalCenter
+            anchors.bottom: screen.bottom
+            anchors.bottomMargin: (screen.height - recorder.height) / 2 + 32
 
-                anchors.horizontalCenter: thumbnail.horizontalCenter
-                anchors.bottom: thumbnail.bottom
-                anchors.bottomMargin: 32
-
-                background: Item { }
-            }
+            background: Item { }
         }
     }
 

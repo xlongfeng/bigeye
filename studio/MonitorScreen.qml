@@ -22,7 +22,7 @@ import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 
 Rectangle {
-    property var controller
+    property alias source: image.source
     color: "gray"
     border.color: "dimgray"
     border.width: 5
@@ -32,6 +32,5 @@ Rectangle {
     Image {
         id: image
         anchors.centerIn: parent
-        source: controller.preview
     }
 }

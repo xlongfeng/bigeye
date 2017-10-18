@@ -32,92 +32,93 @@ Pane {
         id: screenshot
     }
 
-    ColumnLayout {
-        anchors.fill: parent
+    MonitorScreen {
+        id: screen
+        source: screenshot.image
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
 
         Image {
-            id: thumbnail
+            id: snip
             width: 800
             height: 600
             source: screenshot.image
-
-            Image {
-                id: snip
-                width: 800
-                height: 600
-                source: screenshot.image
-                visible: false
-                anchors.centerIn: thumbnail
-                Behavior on width {
-                    NumberAnimation { duration: 2000 }
-                }
-                Behavior on height {
-                    NumberAnimation { duration: 2000 }
-                }
-                onWidthChanged: {
-                    if (width == 600)
-                        visible = false
-                }
+            visible: false
+            anchors.centerIn: screen
+            Behavior on width {
+                NumberAnimation { duration: 2000 }
             }
-
-            NumberAnimation {
-                id: animateWidth
-                target: snip
-                properties: "width"
-                from: 800
-                to: 600
-                duration: 200
+            Behavior on height {
+                NumberAnimation { duration: 2000 }
             }
-            NumberAnimation {
-                id: animateHeight
-                target: snip
-                properties: "height"
-                from: 600
-                to: 500
-                duration: 200
-            }
-
-            IconButton {
-                text: "snapshot"
-                icon: "images/shutter.png"
-                opacity: 0.4
-                onPressed: {
-                    animateWidth.start()
-                    animateHeight.start()
-                    snip.visible = true
-                    screenshot.save()
-                }
-                onHoveredChanged: {
-                    if (hovered) {
-                        opacity = 0.8
-                    } else {
-                        opacity = 0.4
-                    }
-                }
-
-                anchors.horizontalCenter: thumbnail.horizontalCenter
-                anchors.bottom: thumbnail.bottom
-                anchors.bottomMargin: 32
-
-                background: Item { }
+            onWidthChanged: {
+                if (width == 600)
+                    visible = false
             }
         }
 
-        RowLayout {
-            Label {
-                text: qsTr("Save to:")
-            }
-            TextField {
-                id: saveToDirectory
-                selectByMouse: true
-                text: saveToDialog.folder
+        NumberAnimation {
+            id: animateWidth
+            target: snip
+            properties: "width"
+            from: 800
+            to: 600
+            duration: 200
+        }
+        NumberAnimation {
+            id: animateHeight
+            target: snip
+            properties: "height"
+            from: 600
+            to: 500
+            duration: 200
+        }
 
-                Layout.fillWidth: true
+        IconButton {
+            text: "snapshot"
+            icon: "images/shutter.png"
+            opacity: 0.4
+            onPressed: {
+                animateWidth.start()
+                animateHeight.start()
+                snip.visible = true
+                screenshot.save()
             }
-            Button {
-                text: "Browse"
-                onClicked: saveToDialog.open()
+            onHoveredChanged: {
+                if (hovered) {
+                    opacity = 0.8
+                } else {
+                    opacity = 0.4
+                }
             }
+
+            anchors.horizontalCenter: screen.horizontalCenter
+            anchors.bottom: screen.bottom
+            anchors.bottomMargin: (screen.height - screenshot.height) / 2 + 32
+
+            background: Item { }
+        }
+    }
+
+    RowLayout {
+        width: screen.width
+        anchors.top: screen.bottom
+        anchors.horizontalCenter: screen.horizontalCenter
+        anchors.topMargin: 16
+
+        Label {
+            text: qsTr("Save to:")
+        }
+        TextField {
+            id: saveToDirectory
+            selectByMouse: true
+            text: saveToDialog.folder
+
+            Layout.fillWidth: true
+        }
+        Button {
+            text: "Browse"
+            onClicked: saveToDialog.open()
         }
     }
 

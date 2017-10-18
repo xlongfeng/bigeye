@@ -37,7 +37,7 @@ Pane {
         anchors.fill: parent
 
         MonitorScreen {
-            controller: controller
+            source: controller.preview
 
             Layout.row: 0
             Layout.column: 0

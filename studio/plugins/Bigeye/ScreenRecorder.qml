@@ -20,6 +20,8 @@
 import QtQuick 2.7
 
 Item {
+    width: 800
+    height: 600
     property string frame: "images/screenshot.png"
 
     function start() {
