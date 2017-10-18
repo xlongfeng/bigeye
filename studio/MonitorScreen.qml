@@ -31,8 +31,6 @@ Rectangle {
     height: 768 + 20
     Image {
         id: image
-        width: 800
-        height: 600
         anchors.centerIn: parent
         source: controller.preview
     }

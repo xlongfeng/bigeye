@@ -26,17 +26,35 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, QTimer, QSize
+from PyQt5.QtCore import Qt, pyqtProperty, pyqtSlot, QTimer, QSize
 from PyQt5.QtGui import QImage
 from PyQt5.QtQuick import QQuickImageProvider
 
 from repeater import *
+from fishbone import *
 
 
 class VideoRecorder(RepeaterDelegate):
     _rate = 0
     _width = 0
     _height = 0
+
+    @pyqtProperty(int)
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        self._width = value
+
+    @pyqtProperty(int)
+    def height(self):
+        return self._height
+
+    @width.setter
+    def height(self, value):
+        self._height = value
+
     _filename = None
 
     _frame = None
@@ -61,11 +79,6 @@ class VideoRecorder(RepeaterDelegate):
         block, ostream = self._repeater.getRequestBlock()
         ostream.writeQString('videoFrame')
         self._repeater.submitRequestBlock(block)
-
-    def respVideoFrame(self, istream):
-        self._videoFrameWidth = istream.readInt()
-        self._videoFrameHeight = istream.readInt()
-        self._videoFrameBitDepth = istream.readInt()
 
     def onExtendedDataArrived(self, category, data):
         if category == 'videoFrame' and self._timer.isActive():
@@ -117,14 +130,20 @@ class VideoPlayer(SingletonObject):
 class VideoProvider(QQuickImageProvider):
     def __init__(self):
         super().__init__(QQuickImageProvider.Image)
+        self._recorder = VideoRecorder.instance()
 
     def requestImage(self, id, requestedSize):
-        size = QSize(800, 600)
+        if self._recorder.width == 1024:
+            size = QSize(self._recorder.width * 7 / 8, self._recorder.height * 7 / 8)
+        elif self._recorder.width == 1280:
+            size = QSize(self._recorder.width * 3 / 4, self._recorder.height * 3 / 4)
+        else:
+            size = QSize(self._recorder.width, self._recorder.height)
         if requestedSize.width() > 0:
             size.setWidth(requestedSize.width())
         if requestedSize.height() > 0:
             size.setHeight(requestedSize.height())
-        image = VideoRecorder.instance().frame
+        image = VideoRecorder.instance().frame.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         return image, size
 
 
@@ -147,13 +166,16 @@ class ScreenRecorder(QObject):
 
     def __init__(self, parent=None):
         super(ScreenRecorder, self).__init__(parent)
+        self._fishboneConnector = FishboneConnector.instance()
         self._recorder = VideoRecorder.instance()
         self._recorder.frameChanged.connect(self.onFrameChanged)
 
     @pyqtSlot()
     def start(self):
         self._recorder.setFrameRate(5)
-        self._recorder.setResolution(800, 600)
+        self._recorder.setResolution(
+            self._fishboneConnector.screenWidth,
+            self._fishboneConnector.screenHeight)
         self._recorder.setFilename("bigeye-video-{}".format(datetime.now().strftime("%Y%m%d%H%M%S")))
         self._recorder.start()
 

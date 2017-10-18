@@ -27,6 +27,7 @@ from random import choice
 
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, QObject, QTimer
 
+from fishbone import *
 from orm import *
 from keyeventmodel import *
 from keyevent import *
@@ -75,6 +76,8 @@ class Controller(QObject):
         self._pressRange = None
         self._releaseRange = None
 
+        self._fishboneConnector = FishboneConnector.instance()
+
         self._keyEvent = KeyEvent.instance()
 
         self._videoRecorder = VideoRecorder.instance()
@@ -112,7 +115,9 @@ class Controller(QObject):
         self._model.clear()
 
         self._videoRecorder.setFrameRate(5)
-        self._videoRecorder.setResolution(800, 600)
+        self._videoRecorder.setResolution(
+            self._fishboneConnector.screenWidth,
+            self._fishboneConnector.screenHeight)
         self._videoRecorder.setFilename(str(self._testCaseId))
         self._videoRecorder.start()
 

@@ -24,21 +24,38 @@
 
 from datetime import datetime
 
-from PyQt5.QtCore import QObject, QMutex, QSize, QTimer
+from PyQt5.QtCore import Qt, QObject, QMutex, QSize, QTimer
 from PyQt5.QtGui import QImage
 from PyQt5.QtQuick import QQuickImageProvider
 
 from repeater import *
+from fishbone import *
 
 
 class Snapshot(RepeaterDelegate):
     _mutex = QMutex()
 
-    _snapshotWidth = 0
-    _snapshotHeight = 0
-    _snapshotBitDepth = 0
+    _width = 0
+    _height = 0
+    _bitdepth = 0
 
-    _image = QImage(QSize(800, 600), QImage.Format_RGB16)
+    @pyqtProperty(int)
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        self._width = value
+
+    @pyqtProperty(int)
+    def height(self):
+        return self._height
+
+    @width.setter
+    def height(self, value):
+        self._height = value
+
+    _image = None
 
     imageChanged = pyqtSignal()
 
@@ -54,21 +71,21 @@ class Snapshot(RepeaterDelegate):
     def __init__(self, parent=None):
         super(Snapshot, self).__init__(parent)
 
+    def setResolution(self, width, height):
+        self._width = width
+        self._height = height
+        self._image = QImage(QSize(width, height), QImage.Format_RGB16)
+
     def take(self):
         block, ostream = self._repeater.getRequestBlock()
         ostream.writeQString('snapshot')
         self._repeater.submitRequestBlock(block)
 
-    def respSnapshot(self, istream):
-        self._snapshotWidth = istream.readInt()
-        self._snapshotHeight = istream.readInt()
-        self._snapshotBitDepth = istream.readInt()
-
     def onExtendedDataArrived(self, category, data):
         if category == 'snapshot':
             self._mutex.lock()
-            self.image = QImage(data, self._snapshotWidth,
-                           self._snapshotHeight, QImage.Format_RGB16)
+            self.image = QImage(data, self._width,
+                                self._height, QImage.Format_RGB16)
             self._mutex.unlock()
             return True
         else:
@@ -83,14 +100,21 @@ class Snapshot(RepeaterDelegate):
 class SnapshotProvider(QQuickImageProvider):
     def __init__(self):
         super().__init__(QQuickImageProvider.Image)
+        self._snapshot = Snapshot.instance()
 
     def requestImage(self, id, requestedSize):
-        image = Snapshot.instance().image
-        size = image.size()
+        image = self._snapshot.image
+        if self._snapshot.width == 1024:
+            size = QSize(self._snapshot.width * 7 / 8, self._snapshot.height * 7 / 8)
+        elif self._snapshot.width == 1280:
+            size = QSize(self._snapshot.width * 3 / 4, self._snapshot.height * 3 / 4)
+        else:
+            size = QSize(self._snapshot.width, self._snapshot.height)
         if requestedSize.width() > 0:
             size.setWidth(requestedSize.width())
         if requestedSize.height() > 0:
             size.setHeight(requestedSize.height())
+        image = image.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         return image, size
 
 
@@ -110,7 +134,11 @@ class Screenshot(QObject):
 
     def __init__(self, parent=None):
         super(Screenshot, self).__init__(parent)
+        self._fishboneConnector = FishboneConnector.instance()
         self._snapshot = Snapshot.instance()
+        self._snapshot.setResolution(
+            self._fishboneConnector.screenWidth,
+            self._fishboneConnector.screenHeight)
         self._snapshot.imageChanged.connect(self.onImageChanged)
         self._timer = QTimer()
         self._timer.timeout.connect(self.snip)

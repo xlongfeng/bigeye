@@ -44,45 +44,92 @@ class FishboneConnector(RepeaterDelegate):
         self._status = status
         self.statusChanged.emit(status.value)
 
+    _program = None
+    _device = None
+    _screenWidth = 0
+    _screenHeight = 0
+    _screenBitDepth = 0
+
+    @pyqtProperty(int)
+    def screenWidth(self):
+        return self._screenWidth
+
+    @screenWidth.setter
+    def screenWidth(self, value):
+        self._screenWidth = value
+
+    @pyqtProperty(int)
+    def screenHeight(self):
+        return self._screenHeight
+
+    @screenHeight.setter
+    def screenHeight(self, value):
+        self._screenHeight = value
+
+    @pyqtProperty(int)
+    def screenBitDepth(self):
+        return self._screenBitDepth
+
+    @screenBitDepth.setter
+    def screenBitDepth(self, value):
+        self._screenBitDepth = value
+
+    deviceChanged = pyqtSignal()
+
+    @pyqtProperty(str, notify=deviceChanged)
+    def device(self):
+        return self._device
+
+    @device.setter
+    def device(self, device):
+        if self._device != device:
+            self._device = device
+            self.deviceChanged.emit()
+
     def __init__(self, parent=None):
         super(FishboneConnector, self).__init__(parent)
-        self._daemonConnectTimer = QTimer(self)
-        self._daemonConnectTimer.setSingleShot(True)
-        self._daemonConnectTimer.timeout.connect(self.onDaemonConnect)
-        self._daemonConnectTimeoutTimer = QTimer(self)
-        self._daemonConnectTimeoutTimer.setSingleShot(True)
-        self._daemonConnectTimeoutTimer.timeout.connect(self.onDaemonConnectTimeout)
+        self._queryDeviceTimer = QTimer(self)
+        self._queryDeviceTimer.setSingleShot(True)
+        self._queryDeviceTimer.timeout.connect(self.onQueryDevice)
+        self._queryDeviceTimeoutTimer = QTimer(self)
+        self._queryDeviceTimeoutTimer.setSingleShot(True)
+        self._queryDeviceTimeoutTimer.timeout.connect(self.onQeuryDeviceTimeout)
         self.onRepeaterStatusChanged()
         self._repeater.statusChanged.connect(self.onRepeaterStatusChanged)
 
     @pyqtSlot()
     def onRepeaterStatusChanged(self):
         self.status = self.ConnectStatus.connecting if self._repeater.isConnected() else self.ConnectStatus.disconnected
-        print("repeater connected status", self._repeater.isConnected())
         if self.status == self.ConnectStatus.connecting:
-            self._daemonConnectTimer.start(1000)
+            self._queryDeviceTimer.start(1000)
         elif self.status == self.ConnectStatus.disconnected:
-            self._daemonConnectTimer.stop()
-            self._daemonConnectTimeoutTimer.stop()
+            self._queryDeviceTimer.stop()
+            self._queryDeviceTimeoutTimer.stop()
 
     @pyqtSlot()
-    def onDaemonConnect(self):
-        self._daemonConnectTimeoutTimer.start(1000)
+    def onQueryDevice(self):
+        self._queryDeviceTimeoutTimer.start(1000)
         block, ostream = self._repeater.getRequestBlock()
-        ostream.writeQString('version')
+        ostream.writeQString('queryDevice')
         self._repeater.submitRequestBlock(block)
 
-    def respVersion(self, istream):
-        self._daemonConnectTimeoutTimer.stop()
-        program = istream.readQString()
-        version = istream.readQString()
-        self.status = self.ConnectStatus.connected
-        self._daemonConnectTimer.start()
+    def respQueryDevice(self, istream):
+        self._queryDeviceTimeoutTimer.stop()
+        self.program = istream.readQString()
+        if self.program != 'daemon':
+            pass
+        else:
+            self.device = istream.readQString()
+            self.screenWidth = istream.readInt()
+            self.screenHeight = istream.readInt()
+            self.screenBitDepth = istream.readInt()
+            self.status = self.ConnectStatus.connected
+            self._queryDeviceTimer.start()
 
     @pyqtSlot()
-    def onDaemonConnectTimeout(self):
+    def onQeuryDeviceTimeout(self):
         self.status = self.ConnectStatus.connecting
-        self._daemonConnectTimer.start()
+        self._queryDeviceTimer.start()
 
 class Fishbone(QObject):
     _status = 0
