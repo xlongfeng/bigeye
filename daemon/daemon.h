@@ -193,6 +193,7 @@ protected:
 
 private slots:
     void onDataArrived(const QByteArray &bytes);
+    void version(QDataStream &stream);
     void startDaemon(QDataStream &stream);
     void stopDaemon(QDataStream &stream);
     void snapshot(QDataStream &stream);

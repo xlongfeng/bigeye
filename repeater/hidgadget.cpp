@@ -33,12 +33,9 @@
 HidGadget *HidGadget::self = Q_NULLPTR;
 static const char *devcie = "/dev/hidg0";
 
-HidGadget::HidGadget(QObject *parent) : QObject(parent)
+HidGadget::HidGadget(QObject *parent) : QObject(parent),
+    fd(-1)
 {
-    fd = open(devcie, O_RDWR, 0666);
-
-    if (fd < 0)
-        perror(devcie);
 }
 
 HidGadget *HidGadget::instance()
@@ -46,6 +43,26 @@ HidGadget *HidGadget::instance()
     if (!self)
         self = new HidGadget();
     return self;
+}
+
+int HidGadget::open()
+{
+    if (fd < 0) {
+        fd = ::open(devcie, O_RDWR, 0666);
+
+        if (fd < 0)
+            perror(devcie);
+    }
+
+    return fd;
+}
+
+void HidGadget::close()
+{
+    if (fd > 0) {
+        ::close(fd);
+        fd = -1;
+    }
 }
 
 void HidGadget::report(int code, bool down)

@@ -34,6 +34,9 @@ Repeater::Repeater(const QString &portName, bool isStudio, QObject *parent) :
     Bigeye(parent),
     isStudio(isStudio)
 {
+    connectTimer = new QTimer(this);
+    connect(connectTimer, SIGNAL(timeout()), this, SLOT(onConnectTimeout()));
+
 #ifdef POLL_MODE
     port = new QextSerialPort(portName, QextSerialPort::Polling);
     pollTimer = new QTimer(this);
@@ -51,11 +54,26 @@ Repeater::Repeater(const QString &portName, bool isStudio, QObject *parent) :
         qDebug() << "device failed to open:" << port->errorString();
     }
 
+    connectTimer->start(1000);
+
 #ifdef POLL_MODE
     pollTimer = new QTimer(this);
     connect(pollTimer, SIGNAL(timeout()), this, SLOT(onPollTimeout()));
     pollTimer->start(10);
 #endif
+}
+
+void Repeater::onConnectTimeout()
+{
+    int bytes = port->bytesAvailable();
+    if (bytes == -1) {
+        port->close();
+        if (port->open(QIODevice::ReadWrite) == true) {
+            qDebug() << "Starting bigeye repeater at" << port->portName();
+        } else {
+            qDebug() << "device failed to open:" << port->errorString();
+        }
+    }
 }
 
 void Repeater::onPollTimeout()
@@ -111,6 +129,16 @@ void Repeater::startDaemon(QDataStream &stream)
 void Repeater::stopDaemon(QDataStream &stream)
 {
     Q_UNUSED(stream)
+}
+
+void Repeater::keyEventOpen(QDataStream &stream)
+{
+    HidGadget::instance()->open();
+}
+
+void Repeater::keyEventClose(QDataStream &stream)
+{
+    HidGadget::instance()->close();
 }
 
 void Repeater::keyEvent(QDataStream &stream)

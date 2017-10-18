@@ -253,6 +253,18 @@ void Daemon::onDataArrived(const QByteArray &bytes)
     dispose(bytes);
 }
 
+void Daemon::version(QDataStream &stream)
+{
+    QByteArray block;
+    QDataStream istream(&block, QIODevice::WriteOnly);
+    istream.setVersion(QDataStream::Qt_4_8);
+    istream << QString("Bigeye");
+    istream << QString("respVersion");
+    istream << QString("daemon") << QString("1.0");
+
+    thread->tramsmitBytes(escape(block));
+}
+
 void Daemon::startDaemon(QDataStream &stream)
 {
     QByteArray daemon;
