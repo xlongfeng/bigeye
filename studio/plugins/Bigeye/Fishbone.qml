@@ -23,5 +23,5 @@ import Bigeye 1.0
 QtObject {
     id: fishbone
 
-    property int status: 0
+    property int status: 3
 }

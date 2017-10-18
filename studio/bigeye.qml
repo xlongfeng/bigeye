@@ -31,6 +31,8 @@ ApplicationWindow {
     minimumHeight: 960
     title: qsTr("Bigeye Studio")
 
+    property int connectStatus
+
     Fishbone {
         id: fishbone
         property var statusSource: [
@@ -40,10 +42,12 @@ ApplicationWindow {
             "images/status/connected.png"
         ]
         onStatusChanged: {
+            connectStatus = fishbone.status
             status.source = statusSource[fishbone.status]
         }
 
         Component.onCompleted: {
+            connectStatus = fishbone.status
             status.source = statusSource[fishbone.status]
         }
     }
@@ -63,6 +67,7 @@ ApplicationWindow {
                 onClicked: {
                     if (stackView.depth > 1) {
                         if (stackView.currentItem.state == "started") {
+                            warningMessage.text = "The current operation is in progress, please stop first."
                             warningDialog.open()
                         } else {
                             stackView.pop()
@@ -163,6 +168,12 @@ ApplicationWindow {
             clip: true
             delegate: LauncherDelegate{
                 onClicked: {
+                    if (connectStatus !== 3) {
+                        warningMessage.text = "Wating for monitor device connection."
+                        warningDialog.open()
+                        return
+                    }
+
                     listView.currentIndex = index
                     stackView.push(model.url)
                 }
@@ -185,12 +196,12 @@ ApplicationWindow {
 
     Component.onCompleted: {
         addLauncher("Test Case", "Manage and replay test cases", Qt.resolvedUrl("images/testcase.png"), Qt.resolvedUrl("TestCaseActivity.qml"));
-        addLauncher("Manual Operation", "Manual manipulation monitor and record process", Qt.resolvedUrl("images/man.png"),  Qt.resolvedUrl("ManualOperationActivity.qml"));
-        addLauncher("Automatic Operation", "Random manipulation monitor and record process", Qt.resolvedUrl("images/robot.png"), Qt.resolvedUrl("AutomaticOperationActivity.qml"));
+        addLauncher("Manual Operation", "Manual manipulation and record process", Qt.resolvedUrl("images/man.png"),  Qt.resolvedUrl("ManualOperationActivity.qml"));
+        addLauncher("Automatic Operation", "Random manipulation and record process", Qt.resolvedUrl("images/robot.png"), Qt.resolvedUrl("AutomaticOperationActivity.qml"));
         addLauncher("Video Recoder", "Screen record for all-purpose", Qt.resolvedUrl("images/video.png"), Qt.resolvedUrl("VideoRecorderActivity.qml"));
         addLauncher("Screenshot", "Screen capture for all-purpose", Qt.resolvedUrl("images/camera.png"), Qt.resolvedUrl("ScreenshotActivity.qml"));
         addLauncher("System Monitor", "Supervise system status", Qt.resolvedUrl("images/system.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
-        addLauncher("File Browser", "Manage monitor filesystem", Qt.resolvedUrl("images/file-browser.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
+        addLauncher("File Browser", "Filesystem Management", Qt.resolvedUrl("images/file-browser.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
     }
 
     Dialog {
@@ -208,8 +219,8 @@ ApplicationWindow {
             spacing: 20
 
             Label {
-                width: aboutDialog.availableWidth
-                text: "The current operation is in progress, please stop first."
+                id: warningMessage
+                width: warningDialog.availableWidth
                 wrapMode: Label.Wrap
                 font.pixelSize: 12
             }

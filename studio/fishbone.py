@@ -26,6 +26,7 @@ from enum import Enum
 from PyQt5.QtCore import pyqtProperty, pyqtSignal, QObject, QTimer
 
 from repeater import *
+from keyevent import *
 
 
 class FishboneConnector(RepeaterDelegate):
@@ -45,13 +46,43 @@ class FishboneConnector(RepeaterDelegate):
 
     def __init__(self, parent=None):
         super(FishboneConnector, self).__init__(parent)
-        self.onStatusChanged()
-        self._repeater.statusChanged.connect(self.onStatusChanged)
+        self._daemonConnectTimer = QTimer(self)
+        self._daemonConnectTimer.setSingleShot(True)
+        self._daemonConnectTimer.timeout.connect(self.onDaemonConnect)
+        self._daemonConnectTimeoutTimer = QTimer(self)
+        self._daemonConnectTimeoutTimer.setSingleShot(True)
+        self._daemonConnectTimeoutTimer.timeout.connect(self.onDaemonConnectTimeout)
+        self.onRepeaterStatusChanged()
+        self._repeater.statusChanged.connect(self.onRepeaterStatusChanged)
 
     @pyqtSlot()
-    def onStatusChanged(self):
+    def onRepeaterStatusChanged(self):
         self.status = self.ConnectStatus.connecting if self._repeater.isConnected() else self.ConnectStatus.disconnected
         print("repeater connected status", self._repeater.isConnected())
+        if self.status == self.ConnectStatus.connecting:
+            self._daemonConnectTimer.start(1000)
+        elif self.status == self.ConnectStatus.disconnected:
+            self._daemonConnectTimer.stop()
+            self._daemonConnectTimeoutTimer.stop()
+
+    @pyqtSlot()
+    def onDaemonConnect(self):
+        self._daemonConnectTimeoutTimer.start(1000)
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('version')
+        self._repeater.submitRequestBlock(block)
+
+    def respVersion(self, istream):
+        self._daemonConnectTimeoutTimer.stop()
+        program = istream.readQString()
+        version = istream.readQString()
+        self.status = self.ConnectStatus.connected
+        self._daemonConnectTimer.start()
+
+    @pyqtSlot()
+    def onDaemonConnectTimeout(self):
+        self.status = self.ConnectStatus.connecting
+        self._daemonConnectTimer.start()
 
 class Fishbone(QObject):
     _status = 0
@@ -76,4 +107,7 @@ class Fishbone(QObject):
     @pyqtSlot(int)
     def onStatusChanged(self, status):
         self.status = status
-        print("daemon connected status", status)
+        if status == 3:
+            KeyEvent.instance().open()
+        else:
+            KeyEvent.instance().close()

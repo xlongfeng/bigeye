@@ -22,12 +22,33 @@
 #############################################################################
 
 
+from enum import Enum
+
 from repeater import *
 
 
 class KeyEvent(RepeaterDelegate):
+    ConnectStatus = Enum('Status', "disconnected connected")
+    _status = ConnectStatus.disconnected
+
     def __init__(self, parent=None):
         super(KeyEvent, self).__init__(parent)
+
+    def open(self):
+        if self._status is self.ConnectStatus.connected:
+            return
+        self._status = self.ConnectStatus.connected
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('keyEventOpen')
+        self._repeater.submitRequestBlock(block)
+
+    def close(self):
+        if self._status is self.ConnectStatus.disconnected:
+            return
+        self._status = self.ConnectStatus.disconnected
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('keyEventClose')
+        self._repeater.submitRequestBlock(block)
 
     def report(self, code, down):
         block, ostream = self._repeater.getRequestBlock()
