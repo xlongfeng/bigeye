@@ -20,11 +20,7 @@
 #ifndef BIGEYE_H
 #define BIGEYE_H
 
-#include <QObject>
-
-#ifndef Q_NULLPTR
-#define Q_NULLPTR         NULL
-#endif
+#include "fishbone.h"
 
 class Bigeye : public QObject
 {
