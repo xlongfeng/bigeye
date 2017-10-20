@@ -29,191 +29,118 @@ Pane {
     state: "stopped"
 
     Controller {
-        id: keyLogger
+        id: controller
     }
 
-    ColumnLayout {
+    GridLayout {
+        columns: 2
         anchors.fill: parent
 
-        RowLayout {
-            Image {
-                width: 800
-                height: 600
-                source: keyLogger.preview
+        MonitorScreen {
+            source: controller.preview
+
+            Layout.row: 0
+            Layout.column: 0
+        }
+
+        MonitorCheckBoxPanel {
+            id: buttonPanel
+            state: randomOperation.state
+            controller: controller
+
+            Layout.row: 1
+            Layout.column: 0
+        }
+
+        ColumnLayout {
+
+            CpuInfoFragment {
+                Layout.fillWidth: true
+                Layout.minimumHeight: 240
+            }
+
+            ProcessInfoFragment {
+                Layout.fillWidth: true
+                Layout.minimumHeight: 320
             }
 
             KeyLoggerView {
-                model: keyLogger.model
-
+                model: controller.model
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.maximumWidth: 256
-                Layout.bottomMargin: 10
             }
-        }
 
-        RowLayout {
-            Label {
-                text: qsTr("Test Case:")
+            RowLayout {
+                Label {
+                    text: qsTr("Press Interval(s)")
+                }
+                Label {
+                    text: "( " + Math.round(pressRange.first.value)
+                          + " - " + Math.round(pressRange.second.value) +" ):"
+                    Layout.fillWidth: true
+                }
+
+                RangeSlider {
+                    id: pressRange
+                    from: 1
+                    to: 30
+                    stepSize: 1
+                    first.value: 1
+                    second.value: 2
+                    Layout.preferredWidth: 256
+                }
             }
+
+            RowLayout {
+                Label {
+                    text: qsTr("Release Interval(ms)")
+                }
+                Label {
+                    text: "( " + Math.round(releaseRange.first.value)
+                          + " - " + Math.round(releaseRange.second.value) +" ):"
+                    Layout.fillWidth: true
+                }
+
+                RangeSlider {
+                    id: releaseRange
+                    from: 100
+                    to: 2000
+                    stepSize: 10
+                    first.value: 100
+                    second.value: 200
+                    Layout.preferredWidth: 256
+                }
+            }
+
             TextField {
                 id: testCase
                 selectByMouse: true
                 text: qsTr("Random Operation")
-
                 Layout.fillWidth: true
             }
+
             Button {
                 id: recordButton
                 onPressed: {
                     if (randomOperation.state === "stopped") {
                         randomOperation.state = "started"
-                        keyLogger.setPressRange(pressRange.first.value, pressRange.second.value)
-                        keyLogger.setReleaseRange(releaseRange.first.value, releaseRange.second.value)
-                        keyLogger.clearAutomaticKeys()
-                        for (var i in automaticKeys.children) {
-                            var item = automaticKeys.children[i]
-                            if (item.objectName === "checkbox" && item.checked) {
-                                keyLogger.appendAutomaticKey(item.text, item.key)
-                            }
-                        }
-                        keyLogger.setAutomation(true)
-                        keyLogger.start(testCase.text)
+                        controller.setPressRange(pressRange.first.value, pressRange.second.value)
+                        controller.setReleaseRange(releaseRange.first.value, releaseRange.second.value)
+                        buttonPanel.setup()
+                        controller.setAutomation(true)
+                        controller.start(testCase.text)
                     } else {
                         randomOperation.state = "stopped"
-                        keyLogger.stop()
+                        controller.stop()
                     }
                 }
-                Layout.minimumWidth: 96
-            }
-
-            Layout.maximumHeight: recordButton.implicitHeight + 10
-        }
-
-        RowLayout {
-            Label {
-                text: qsTr("Press Interval(s)")
-            }
-            Label {
-                text: "( " + Math.round(pressRange.first.value)
-                      + " - " + Math.round(pressRange.second.value) +" ):"
-                Layout.preferredWidth: 96
-            }
-
-            RangeSlider {
-                id: pressRange
-                from: 1
-                to: 30
-                stepSize: 1
-                first.value: 1
-                second.value: 2
-
                 Layout.fillWidth: true
-            }
-            Label {
-                text: qsTr("Release Interval(ms)")
-            }
-            Label {
-                text: "( " + Math.round(releaseRange.first.value)
-                      + " - " + Math.round(releaseRange.second.value) +" ):"
-                Layout.preferredWidth: 96
+                Layout.bottomMargin: 10
             }
 
-            RangeSlider {
-                id: releaseRange
-                from: 100
-                to: 2000
-                stepSize: 10
-                first.value: 100
-                second.value: 200
-
-                Layout.fillWidth: true
-            }
-        }
-
-        RowLayout {
-            id: automaticKeys
-            IconCheckBox {
-                id: buttonPower
-                text: "Power"
-                icon: "images/power.png"
-                key: Qt.Key_F9
-                objectName: "checkbox"
-            }
-            Item {
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-            }
-            IconCheckBox {
-                id: buttonF4
-                checked: true
-                text: "F4"
-                icon: "images/f4.png"
-                key: Qt.Key_F4
-                objectName: "checkbox"
-            }
-            IconCheckBox {
-                id: buttonF5
-                checked: true
-                text: "F5"
-                icon: "images/f5.png"
-                key: Qt.Key_F5
-                objectName: "checkbox"
-            }
-            IconCheckBox {
-                id: buttonF6
-                checked: true
-                text: "F6"
-                icon: "images/f6.png"
-                key: Qt.Key_F6
-                objectName: "checkbox"
-            }
-            IconCheckBox {
-                id: buttonF7
-                checked: true
-                text: "F7"
-                icon: "images/f7.png"
-                key: Qt.Key_F7
-                objectName: "checkbox"
-            }
-            IconCheckBox {
-                id: buttonF8
-                checked: true
-                text: "F8"
-                icon: "images/f8.png"
-                key: Qt.Key_F8
-                objectName: "checkbox"
-            }
-            Item {
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-            }
-            IconCheckBox {
-                id: buttonLeft
-                checked: true
-                text: "Left"
-                icon: "images/left.png"
-                key: Qt.Key_Left
-                objectName: "checkbox"
-            }
-            IconCheckBox {
-                id: buttonRight
-                checked: true
-                text: "Right"
-                icon: "images/right.png"
-                key: Qt.Key_Right
-                objectName: "checkbox"
-            }
-            IconCheckBox {
-                id: buttonEnter
-                checked: true
-                text: "Enter"
-                icon: "images/enter.png"
-                key: Qt.Key_Enter
-                objectName: "checkbox"
-            }
-
-            Layout.maximumHeight: buttonPower.implicitHeight + 10
+            Layout.row: 0
+            Layout.column: 1
+            Layout.rowSpan: 2
         }
     }
 

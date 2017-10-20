@@ -26,28 +26,27 @@ CheckBox {
     property alias icon: image.source
     property int key
 
-    indicator.x: control.width / 2 - indicator.width / 2
-    indicator.y: control.topPadding
+    implicitWidth: 96
+    implicitHeight: 96
 
-    contentItem: ColumnLayout {
-        anchors.centerIn: parent
-        Item {
-            height: indicator.height
-        }
-        Rectangle {
-            border.color: "black"
-            border.width: 2
-            width: image.implicitWidth
-            height: image.implicitHeight
-            Image {
-                id: image
-                sourceSize: "80x80"
-                opacity: enabled ? 1.0 : 0.25
-                Behavior on opacity {
-                    NumberAnimation { duration: 200 }
-                }
-                anchors.fill: parent
+    indicator.z: contentItem.z + 1
+    indicator.x: contentItem.x + contentItem.width - contentItem.border.width - indicator.width
+    indicator.y: contentItem.y + contentItem.border.width
+
+    contentItem: Rectangle {
+        border.color: "black"
+        border.width: 2
+        width: control.width
+        height: control.height
+        Image {
+            id: image
+            sourceSize: "64x64"
+            opacity: enabled ? 1.0 : 0.25
+            Behavior on opacity {
+                NumberAnimation { duration: 200 }
             }
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
         }
     }
 }

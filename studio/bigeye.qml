@@ -35,21 +35,6 @@ ApplicationWindow {
 
     Fishbone {
         id: fishbone
-        property var statusSource: [
-            "images/status/cancel.png",
-            "images/status/disconnected.png",
-            "images/status/connecting.png",
-            "images/status/connected.png"
-        ]
-        onStatusChanged: {
-            connectStatus = fishbone.status
-            status.source = statusSource[fishbone.status]
-        }
-
-        Component.onCompleted: {
-            connectStatus = fishbone.status
-            status.source = statusSource[fishbone.status]
-        }
     }
 
     header: ToolBar {
@@ -90,13 +75,45 @@ ApplicationWindow {
             }
 
             ToolButton {
+                id: status
+                property var statusImageSource: [
+                    "images/status/cancel.png",
+                    "images/status/disconnected.png",
+                    "images/status/connecting.png",
+                    "images/status/connected.png"
+                ]
+                property var statusBackgroudColor: [
+                    "transparent",
+                    "magenta",
+                    "cyan",
+                    "lime"
+                ]
+
                 contentItem: Image {
-                    id: status
                     sourceSize.width: 24
                     sourceSize.height: 24
                     fillMode: Image.Pad
                     horizontalAlignment: Image.AlignHCenter
                     verticalAlignment: Image.AlignVCenter
+                }
+
+                background: Rectangle {
+                    color: "transparent"
+                }
+
+                Connections {
+                    target: fishbone
+                    onStatusChanged: {
+                        connectStatus = fishbone.status
+                        status.contentItem.source = status.statusImageSource[fishbone.status]
+                        status.background.color = status.statusBackgroudColor[fishbone.status]
+                    }
+                }
+
+                Component.onCompleted: {
+                    connectStatus = fishbone.status
+                    status.contentItem.source = status.statusImageSource[fishbone.status]
+                    status.background.color = status.statusBackgroudColor[fishbone.status]
                 }
             }
 
@@ -196,8 +213,8 @@ ApplicationWindow {
 
     Component.onCompleted: {
         addLauncher("Test Case", "Manage and replay test cases", Qt.resolvedUrl("images/testcase.png"), Qt.resolvedUrl("TestCaseActivity.qml"));
-        addLauncher("Manual Operation", "Manual manipulation and record process", Qt.resolvedUrl("images/man.png"),  Qt.resolvedUrl("ManualOperationActivity.qml"));
-        addLauncher("Automatic Operation", "Random manipulation and record process", Qt.resolvedUrl("images/robot.png"), Qt.resolvedUrl("AutomaticOperationActivity.qml"));
+        addLauncher("Manual Operation", "Manual manipulation and record test procedure", Qt.resolvedUrl("images/man.png"),  Qt.resolvedUrl("ManualOperationActivity.qml"));
+        addLauncher("Automatic Operation", "Random manipulation and record test procedure", Qt.resolvedUrl("images/robot.png"), Qt.resolvedUrl("AutomaticOperationActivity.qml"));
         addLauncher("Video Recoder", "Screen record for all-purpose", Qt.resolvedUrl("images/video.png"), Qt.resolvedUrl("VideoRecorderActivity.qml"));
         addLauncher("Screenshot", "Screen capture for all-purpose", Qt.resolvedUrl("images/camera.png"), Qt.resolvedUrl("ScreenshotActivity.qml"));
         addLauncher("System Monitor", "Supervise system status", Qt.resolvedUrl("images/system.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
