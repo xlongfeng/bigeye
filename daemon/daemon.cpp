@@ -261,6 +261,7 @@ void Daemon::queryDevice(QDataStream &stream)
     istream << QString("Bigeye");
     istream << QString("respQueryDevice");
     istream << QString("daemon")
+            << QString("1.0")
             << getDeviceType()
             << getFramebufferWidth()
             << getFramebufferHeight()
