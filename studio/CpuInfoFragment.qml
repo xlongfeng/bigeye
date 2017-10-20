@@ -37,7 +37,17 @@ ListView {
 
         ListElement {
             cpu: 1
-            cpuUsage: 20
+            cpuUsage: 30
+        }
+
+        ListElement {
+            cpu: 2
+            cpuUsage: 10
+        }
+
+        ListElement {
+            cpu: 3
+            cpuUsage: 100
         }
     }
 
@@ -52,18 +62,18 @@ ListView {
         Rectangle {
             width: 30
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: (101 - cpuUsage) / 100; color: {
-                        var colorHigh = Math.round(0xff * cpuUsage / 100).toString(16)
-                        var colorLow = Math.round(0xff * (100 - cpuUsage) / 100).toString(16)
-                        colorHigh = "0%1".arg(colorHigh).slice(-2)
-                        colorLow = "0%1".arg(colorLow).slice(-2)
-                        return '#' + colorHigh + colorLow + '00'
-                    }
-                }
-                GradientStop { position: 1.0; color: "#00FF00" }
-                GradientStop { position: (101 - cpuUsage - 1) / 100; color: "transparent" }
+                GradientStop { position: 0.0; color: "red" }
+                GradientStop { position: 0.5; color: "yellow" }
+                GradientStop { position: 1.0; color: "lime" }
             }
+
+            Rectangle {
+                color: "white"
+                width: parent.width
+                height: parent.height * (100 - cpuUsage) / 100
+                anchors.top: parent.top
+            }
+
             Layout.fillHeight: true
         }
 
