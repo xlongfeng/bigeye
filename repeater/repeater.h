@@ -40,10 +40,13 @@ public slots:
     void onDataArrived(const char *data, int length);
 
 private slots:
+    void onConnectTimeout();
     void onPollTimeout();
     void onReadyRead();
     void startDaemon(QDataStream &stream);
     void stopDaemon(QDataStream &stream);
+    void keyEventOpen(QDataStream &stream);
+    void keyEventClose(QDataStream &stream);
     void keyEvent(QDataStream &stream);
     void extendedData(QDataStream &stream);
 #if 0
@@ -61,6 +64,7 @@ private:
 private:
     bool isStudio;
     QextSerialPort *port;
+    QTimer *connectTimer;
     QTimer *pollTimer;
     QByteArray buffer;
     static const int BufferSize = 128 * 1024;

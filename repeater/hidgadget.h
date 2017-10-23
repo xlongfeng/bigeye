@@ -33,6 +33,8 @@ class HidGadget : public QObject
 public:
     static HidGadget *instance();
 
+    int open();
+    void close();
     void report(int code, bool down);
 
 private:

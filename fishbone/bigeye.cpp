@@ -23,6 +23,7 @@
 #include <linux/fb.h>
 
 #include <QDataStream>
+#include <QFile>
 #include <QDebug>
 
 #include "bigeye.h"
@@ -31,7 +32,7 @@ Bigeye::Bigeye(QObject *parent) :
     QObject(parent),
     extendedDataSize(-1)
 {
-    getFramebufferInfo();
+    getDeviceInfo();
 }
 
 void Bigeye::dispose(const QByteArray &bytes)
@@ -113,7 +114,7 @@ QByteArray Bigeye::unescape(const QByteArray &data)
             }
         }
     }
-    return data;
+    return buf;
 }
 
 QByteArray& Bigeye::getFramebuffer()
@@ -123,8 +124,21 @@ QByteArray& Bigeye::getFramebuffer()
     return framebuffer;
 }
 
-void Bigeye::getFramebufferInfo()
+void Bigeye::getDeviceInfo()
 {
+    deviceType = "unkonwn";
+    QFile cmdline("/proc/cmdline");
+    if (cmdline.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QByteArray data = cmdline.readAll();
+        int start = data.indexOf("machine=");
+        if (start != -1) {
+            start += strlen("machine=");
+            int end = data.indexOf(" ", start);
+            deviceType = data.mid(start, end - start);
+        }
+        cmdline.close();
+    }
+
     struct fb_var_screeninfo fb_varinfo;
     memset(&fb_varinfo, 0, sizeof(struct fb_var_screeninfo));
 

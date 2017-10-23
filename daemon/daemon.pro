@@ -28,10 +28,10 @@ DEFINES += QT_DEPRECATED_WARNINGS
 HEADERS += \
     daemon.h
 
-unix|win32: LIBS += -L$$OUT_PWD/../lib/ -lbigeye
+unix|win32: LIBS += -L$$OUT_PWD/../fishbone/ -lfishbone
 
-INCLUDEPATH += $$PWD/../lib
-DEPENDPATH += $$PWD/../lib
+INCLUDEPATH += $$PWD/../fishbone
+DEPENDPATH += $$PWD/../fishbone
 
-win32:!win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../lib/bigeye.lib
-else:unix|win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../lib/libbigeye.a
+win32:!win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../fishbone/fishbone.lib
+else:unix|win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../fishbone/libfishbone.a

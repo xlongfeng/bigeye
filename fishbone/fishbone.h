@@ -17,33 +17,14 @@
  *
  */
 
-#ifndef LAUNCHER_H
-#define LAUNCHER_H
+#ifndef FISHBONE_H
 
-#include <QDataStream>
+#include <QObject>
 
-#include "bigeye.h"
-#include "bigeyelinker.h"
+#ifndef Q_NULLPTR
+#define Q_NULLPTR         NULL
+#endif
 
+#define FISHBONE_H
 
-class Launcher : public Bigeye
-{
-    Q_OBJECT
-
-public:
-    explicit Launcher(QObject *parent = Q_NULLPTR);
-
-protected:
-    virtual void defaultDispose(const QString &command, QDataStream &stream);
-
-private slots:
-    void onDataArrived(const QByteArray &bytes);
-    void queryDevice(QDataStream &stream);
-    void startDaemon(QDataStream &stream);
-    void stopDaemon(QDataStream &stream);
-
-private:
-    BigeyeLinker *linker;
-};
-
-#endif // LAUNCHER_H
+#endif // FISHBONE_H

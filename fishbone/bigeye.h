@@ -20,11 +20,7 @@
 #ifndef BIGEYE_H
 #define BIGEYE_H
 
-#include <QObject>
-
-#ifndef Q_NULLPTR
-#define Q_NULLPTR         NULL
-#endif
+#include "fishbone.h"
 
 class Bigeye : public QObject
 {
@@ -33,6 +29,10 @@ public:
     explicit Bigeye(QObject *parent = Q_NULLPTR);
 
 protected:
+    QString getDeviceType() const
+    {
+        return deviceType;
+    }
     int getFramebufferWidth() const
     {
         return framebufferWidth;
@@ -66,11 +66,13 @@ protected:
     QByteArray unescape(const QByteArray &data);
 
 private:
-    void getFramebufferInfo();
+    void getDeviceInfo();
 
 private:
     QByteArray datagram;
     int extendedDataSize;
+
+    QString deviceType;
 
     int framebufferFd;
     int framebufferWidth;
