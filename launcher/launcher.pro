@@ -7,9 +7,9 @@ TARGET = bigeye-launcher
 CONFIG += console
 CONFIG -= app_bundle
 
-LIBS += -lusb-1.0
-
 TEMPLATE = app
+
+LIBS += -lusb-1.0
 
 SOURCES += main.cpp \
     launcher.cpp
@@ -27,3 +27,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
     launcher.h
+
+unix|win32: LIBS += -L$$OUT_PWD/../fishbone/ -lfishbone
+
+INCLUDEPATH += $$PWD/../fishbone
+DEPENDPATH += $$PWD/../fishbone
+
+win32:!win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../fishbone/fishbone.lib
+else:unix|win32-g++: PRE_TARGETDEPS += $$OUT_PWD/../fishbone/libfishbone.a

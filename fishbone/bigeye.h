@@ -29,7 +29,10 @@ public:
     explicit Bigeye(QObject *parent = Q_NULLPTR);
 
 protected:
-    QString& getDeviceType() const;
+    QString getDeviceType() const
+    {
+        return deviceType;
+    }
     int getFramebufferWidth() const
     {
         return framebufferWidth;
@@ -63,11 +66,13 @@ protected:
     QByteArray unescape(const QByteArray &data);
 
 private:
-    void getFramebufferInfo();
+    void getDeviceInfo();
 
 private:
     QByteArray datagram;
     int extendedDataSize;
+
+    QString deviceType;
 
     int framebufferFd;
     int framebufferWidth;

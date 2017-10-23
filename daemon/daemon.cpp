@@ -45,6 +45,7 @@ void Daemon::onDataArrived(const QByteArray &bytes)
 
 void Daemon::queryDevice(QDataStream &stream)
 {
+    Q_UNUSED(stream)
     QByteArray block;
     QDataStream istream(&block, QIODevice::WriteOnly);
     istream.setVersion(QDataStream::Qt_4_8);
@@ -62,15 +63,7 @@ void Daemon::queryDevice(QDataStream &stream)
 
 void Daemon::startDaemon(QDataStream &stream)
 {
-    QByteArray daemon;
-    stream >> daemon;
-    if (stream.status() == QDataStream::Ok) {
-        QFile file("/tmp/bigeyeDaemon");
-        file.open(QIODevice::WriteOnly);
-        file.setPermissions(file.permissions() | QFile::ExeOwner);
-        file.write(daemon);
-        file.close();
-    }
+    Q_UNUSED(stream)
 }
 
 void Daemon::stopDaemon(QDataStream &stream)

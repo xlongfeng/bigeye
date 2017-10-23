@@ -39,16 +39,19 @@ public:
     explicit BigeyeLinker(QObject *parent = Q_NULLPTR);
     ~BigeyeLinker();
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
-    bool isInterruptionRequested() const
+    bool isSafeExitRequested() const
     {
         return interrupt;
     }
-    void requestInterruption()
+    void clearSafeExitRequested()
+    {
+        interrupt = false;
+    }
+
+    void requestSafeExit()
     {
         interrupt = true;
     }
-#endif
 
     void stop();
 
@@ -73,9 +76,7 @@ private:
     static void dumpUsbInformation(libusb_device *dev);
 
 private:
-#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
     bool interrupt;
-#endif
 
     class USBTransferBlock {
     public:

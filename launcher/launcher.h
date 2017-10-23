@@ -20,46 +20,30 @@
 #ifndef LAUNCHER_H
 #define LAUNCHER_H
 
-#include <libusb-1.0/libusb.h>
+#include <QDataStream>
 
-#include <QObject>
-#include <QThread>
-#include <QMutex>
+#include "bigeye.h"
+#include "bigeyelinker.h"
 
-#ifndef Q_NULLPTR
-#define Q_NULLPTR         NULL
-#endif
 
-class USBHandleEventThread: public QThread
-{
-    Q_OBJECT
-
-public:
-    explicit USBHandleEventThread(QObject *parent = Q_NULLPTR);
-
-protected:
-    virtual void run();
-
-};
-
-class Launcher : public QObject
+class Launcher : public Bigeye
 {
     Q_OBJECT
 
 public:
     explicit Launcher(QObject *parent = Q_NULLPTR);
 
-private:
-    static int hotplug_callback(libusb_context *ctx, libusb_device *dev,
-                                libusb_hotplug_event event, void *user_data);
+protected:
+    virtual void defaultDispose(const QString &command, QDataStream &stream);
+
+private slots:
+    void onDataArrived(const QByteArray &bytes);
+    void queryDevice(QDataStream &stream);
+    void startDaemon(QDataStream &stream);
+    void stopDaemon(QDataStream &stream);
 
 private:
-    QMutex mutex;
-
-    libusb_context *ctx;
-    libusb_device_handle *device;
-    libusb_hotplug_callback_handle hotplug;
-    USBHandleEventThread *thread;
+    BigeyeLinker *linker;
 };
 
 #endif // LAUNCHER_H

@@ -21,25 +21,13 @@
 
 QList<BigeyeLinker::USBTransferBlock *> BigeyeLinker::USBTransferBlock::transferBlockFreeList;
 
-BigeyeLinker::BigeyeLinker(QObject *parent) : QThread(parent)
-#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
-    , interrupt(false)
-#endif
+BigeyeLinker::BigeyeLinker(QObject *parent) : QThread(parent),
+    interrupt(false)
 {
     pingReceiveBlock = USBTransferBlock::create(this);
     pongReceiveBlock = USBTransferBlock::create(this);
 
     int rc = libusb_init(&ctx);
-    if (LIBUSB_SUCCESS != rc) {
-        qDebug() << "libusb_init" << libusb_error_name(rc);
-    }
-
-    rc = libusb_hotplug_register_callback(
-                ctx, (libusb_hotplug_event)(LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
-                LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT),
-                (libusb_hotplug_flag)LIBUSB_HOTPLUG_ENUMERATE,
-                0x2009, 0x0805, LIBUSB_HOTPLUG_MATCH_ANY,
-                hotplugCallback, this, &hotplug);
     if (LIBUSB_SUCCESS != rc) {
         qDebug() << "libusb_init" << libusb_error_name(rc);
     }
@@ -54,7 +42,9 @@ BigeyeLinker::~BigeyeLinker()
 
 void BigeyeLinker::stop()
 {
+    requestSafeExit();
     libusb_hotplug_deregister_callback(ctx, hotplug);
+    wait();
 }
 
 void BigeyeLinker::enqueueReceiveBytes(const QByteArray &bytes)
@@ -82,11 +72,29 @@ void BigeyeLinker::run()
 {
     qDebug() << "BigeyeLinker" << "start";
 
+    int rc = libusb_hotplug_register_callback(
+                ctx, (libusb_hotplug_event)(LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
+                LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT),
+                (libusb_hotplug_flag)LIBUSB_HOTPLUG_ENUMERATE,
+                0x2009, 0x0805, LIBUSB_HOTPLUG_MATCH_ANY,
+                hotplugCallback, this, &hotplug);
+    if (LIBUSB_SUCCESS != rc) {
+        qDebug() << "libusb_init" << libusb_error_name(rc);
+    }
+
+    clearSafeExitRequested();
+
     forever {
-        if (isInterruptionRequested())
+        if (isSafeExitRequested())
             break;
         // qDebug() << "BigeyeLinker" << "handle";
         libusb_handle_events_completed(Q_NULLPTR, Q_NULLPTR);
+    }
+
+    if (device) {
+        stopReceive();
+        libusb_close(device);
+        device = Q_NULLPTR;
     }
 
     qDebug() << "BigeyeLinker" << "end";
@@ -109,6 +117,7 @@ void BigeyeLinker::stopReceive()
 {
     pongReceiveBlock->cancel();
     pingReceiveBlock->cancel();
+    libusb_release_interface(device, 0);
 }
 
 void BigeyeLinker::transmitTransferCallback(libusb_transfer *transfer)
