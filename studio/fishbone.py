@@ -94,6 +94,9 @@ class FishboneConnector(RepeaterDelegate):
         self._queryDeviceTimeoutTimer = QTimer(self)
         self._queryDeviceTimeoutTimer.setSingleShot(True)
         self._queryDeviceTimeoutTimer.timeout.connect(self.onQeuryDeviceTimeout)
+        self._launchDaemonTimeoutTimer = QTimer(self)
+        self._launchDaemonTimeoutTimer.setSingleShot(True)
+        self._launchDaemonTimeoutTimer.timeout.connect(self.launchDaemonFailed)
         self.onRepeaterStatusChanged()
         self._repeater.statusChanged.connect(self.onRepeaterStatusChanged)
 
@@ -117,8 +120,10 @@ class FishboneConnector(RepeaterDelegate):
         self._queryDeviceTimeoutTimer.stop()
         self.program = istream.readQString()
         if self.program != 'daemon':
-            pass
+            self.startDaemon()
         else:
+            self._launchDaemonTimeoutTimer.stop()
+            version = istream.readQString()
             self.device = istream.readQString()
             self.screenWidth = istream.readInt()
             self.screenHeight = istream.readInt()
@@ -130,6 +135,26 @@ class FishboneConnector(RepeaterDelegate):
     def onQeuryDeviceTimeout(self):
         self.status = self.ConnectStatus.connecting
         self._queryDeviceTimer.start()
+
+    def startDaemon(self):
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('startDaemon')
+        with open("bigeye-daemon", "rb") as f:
+            ostream.writeBytes(f.read())
+        self._repeater.submitRequestBlock(block)
+        # start a start daemon timeout timer to detect daemon launched failed
+        self._launchDaemonTimeoutTimer.start(3000)
+        self._queryDeviceTimer.start()
+
+    @pyqtSlot()
+    def launchDaemonFailed(self):
+        # what can I do with this situation
+        print("daemon launched failed")
+
+    def stopDaemon(self):
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('stopDaemon')
+        self._repeater.submitRequestBlock(block)
 
 class Fishbone(QObject):
     _status = 0

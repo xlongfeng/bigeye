@@ -322,52 +322,6 @@ class Repeater(SingletonObject):
     def stopReceive(self):
         pass
 
-    """
-    def reqDaemonVersion(self):
-        block = QByteArray()
-        ostream = QDataStream(block, QIODevice.WriteOnly)
-        ostream.setVersion(QDataStream.Qt_4_8)
-        ostream.writeQString('Bigeye')
-        ostream.writeQString('daemonVersion')
-
-        block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
-        transfer.submit()
-        self._urb_busy_list.append(transfer)
-        self._loop.start()
-
-    def startDaemon(self):
-        block = QByteArray()
-        ostream = QDataStream(block, QIODevice.WriteOnly)
-        ostream.setVersion(QDataStream.Qt_4_8)
-        ostream.writeQString('Bigeye')
-        ostream.writeQString('startDaemon')
-        with open("bigeyeDaemon", "rb") as f:
-            ostream.writeBytes(f.read())
-
-        block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
-        transfer.submit()
-        self._urb_busy_list.append(transfer)
-        self._loop.start()
-
-    def stopDaemon(self):
-        block = QByteArray()
-        ostream = QDataStream(block, QIODevice.WriteOnly)
-        ostream.setVersion(QDataStream.Qt_4_8)
-        ostream.writeQString('Bigeye')
-        ostream.writeQString('stopDaemon')
-
-        block = self._escape(block)
-        transfer = self._handle.getTransfer()
-        transfer.setBulk(self._out_ep, block, callback=self.sendDataCallback, user_data=self)
-        transfer.submit()
-        self._urb_busy_list.append(transfer)
-        self._loop.start()
-    """
-
     @staticmethod
     def _escape(data):
         escape = QByteArray()
