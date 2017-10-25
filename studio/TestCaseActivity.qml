@@ -24,6 +24,8 @@ import QtQuick.Layouts 1.3
 import Bigeye 1.0
 
 Item {
+    id: activity
+
     ListView {
         id: testCase
 
@@ -33,15 +35,15 @@ Item {
         clip: true
         model: TestCaseModel { }
 
-        /*
-        delegate: ItemDelegate {
-            width: parent.width
-            text: "%1 %2".arg(name).arg(timestamp)
+        delegate: TestCaseDelegate {
             onClicked: {
+                activity.StackView.view.push("ReplayActivity.qml", {"identity": identity})
+            }
+
+            onPressAndHold: {
+                console.log("press and hold")
             }
         }
-        */
-        delegate: TestCaseDelegate { }
 
         remove: Transition {
             SequentialAnimation {

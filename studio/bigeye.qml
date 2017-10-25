@@ -56,7 +56,8 @@ ApplicationWindow {
                             warningDialog.open()
                         } else {
                             stackView.pop()
-                            listView.currentIndex = -1
+                            if (stackView.depth == 1)
+                                listView.currentIndex = -1
                         }
                     } else {
                         drawer.open()
@@ -117,6 +118,7 @@ ApplicationWindow {
                 }
             }
 
+            /*
             ToolButton {
                 id: optionToolButton
                 contentItem: Image {
@@ -143,6 +145,7 @@ ApplicationWindow {
                     }
                 }
             }
+            */
         }
     }
 

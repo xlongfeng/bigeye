@@ -171,7 +171,7 @@ class Fishbone(QObject):
         self.statusChanged.emit()
 
     def __init__(self, parent=None):
-        super(QObject, self).__init__(parent)
+        super(Fishbone, self).__init__(parent)
         self._connector = FishboneConnector.instance()
         self.status = self._connector.status.value
         self._connector.statusChanged.connect(self.onStatusChanged)

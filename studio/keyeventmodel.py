@@ -36,14 +36,14 @@ class KeyEventModel(QAbstractListModel):
     DownRole = Qt.UserRole + 4
     TimestampRole = Qt.UserRole + 5
     
-    _roles = { IdRole: b"id", NameRole: b"name",
+    _roles = { IdRole: b"identity", NameRole: b"name",
                KeyRole: b"key", DownRole: b"down", 
                TimestampRole: b"timestamp"}
     
     rowAppended = pyqtSignal()
     
     def __init__(self, parent=None):
-        super(QAbstractListModel, self).__init__(parent)
+        super(KeyEventModel, self).__init__(parent)
         
         self._keyEvents = []
     
@@ -59,6 +59,13 @@ class KeyEventModel(QAbstractListModel):
     @pyqtSlot()
     def clear(self):
         self.removeRows(0, self.rowCount())
+
+    def select(self, test_case_id):
+        self.beginResetModel()
+        self._keyEvents.clear()
+        for instance in session.query(KeyEvent).filter(KeyEvent.test_case_id == test_case_id).order_by(desc(KeyEvent.id)):
+            self._keyEvents.append(instance)
+        self.endResetModel()
     
     def removeRows(self, row, count, parent=QModelIndex()):
         first = row

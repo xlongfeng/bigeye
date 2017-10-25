@@ -39,7 +39,7 @@ class ProcessModel(QAbstractListModel):
     _roles = {PidRole: b"pid", NameRole: b"name", SmpRole: b"smp", CpuRole: b"cpu", MemoryRole: b"memory"}
 
     def __init__(self, parent=None):
-        super(QAbstractListModel, self).__init__(parent)
+        super(ProcessModel, self).__init__(parent)
         self._processes = []
         self._repeater = Repeater.instance()
         self._timer = QTimer()

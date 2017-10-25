@@ -18,29 +18,14 @@
 
 
 import QtQuick 2.7
+import Bigeye 1.0
 
-ListModel {
-    signal rowAppended()
-    /*
-    ListElement {
-       identity: 1
-       name: "Enter"
-       code: Qt.Key_Return
-       down: 1
-       timestamp: 500
-       testCaseId: 1
-    }
+Controller {
+    id: controller
 
-    ListElement {
-       identity: 2
-       name: "Enter"
-       code: Qt.Key_Return
-       down: 0
-       timestamp: 1500
-       testCaseId: 1
-    }
-    */
-    function select(id) {
-        console.log("Select key events by test case id", id)
-    }
+    property int replayTestCaseId
+
+    property KeyEventModel replayModel: KeyEventModel { }
+
+    property string testCaseName: "Manual Operation"
 }

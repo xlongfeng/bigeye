@@ -24,12 +24,15 @@ import QtQuick.Layouts 1.3
 import Bigeye 1.0
 
 Pane {
-    id: manualOperation
+    id: activity
 
     state: "stopped"
 
-    Controller {
+    property int identity
+
+    ReplayController {
         id: controller
+        replayTestCaseId: identity
     }
 
     GridLayout {
@@ -43,8 +46,8 @@ Pane {
             Layout.column: 0
         }
 
-        MonitorPanel {
-            state: manualOperation.state
+        MonitorReplayPanel {
+            state: activity.state
             controller: controller
 
             Layout.row: 1
@@ -52,7 +55,6 @@ Pane {
         }
 
         ColumnLayout {
-
             CpuInfoFragment {
                 Layout.fillWidth: true
                 Layout.minimumHeight: 160
@@ -64,6 +66,14 @@ Pane {
             }
 
             KeyLoggerView {
+                id: replayKeyLogger
+                model: controller.replayModel
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+
+            KeyLoggerView {
+                id: keyLogger
                 model: controller.model
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -72,18 +82,18 @@ Pane {
             TextField {
                 id: testCase
                 selectByMouse: true
-                text: qsTr("Manual Operation")
+                text: controller.testCaseName + qsTr(" Replay")
                 Layout.fillWidth: true
             }
 
             Button {
                 id: recordButton
                 onPressed: {
-                    if (manualOperation.state === "stopped") {
-                        manualOperation.state = "started"
-                        controller.start(testCase.text, "manual")
+                    if (activity.state === "stopped") {
+                        activity.state = "started"
+                        controller.start(testCase.text, "replay")
                     } else {
-                        manualOperation.state = "stopped"
+                        activity.state = "stopped"
                         controller.stop()
                     }
                 }

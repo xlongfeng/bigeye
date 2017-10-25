@@ -18,29 +18,24 @@
 
 
 import QtQuick 2.7
+import Bigeye 1.0
 
-ListModel {
-    signal rowAppended()
-    /*
-    ListElement {
-       identity: 1
-       name: "Enter"
-       code: Qt.Key_Return
-       down: 1
-       timestamp: 500
-       testCaseId: 1
+Controller {
+    id: controller
+
+    function setPressRange(start, stop) {
+        console.log("Key press range from %1 to %2".arg(start).arg(stop))
     }
 
-    ListElement {
-       identity: 2
-       name: "Enter"
-       code: Qt.Key_Return
-       down: 0
-       timestamp: 1500
-       testCaseId: 1
+    function setReleaseRange(start, stop) {
+        console.log("Key release range from %1 to %2".arg(start).arg(stop))
     }
-    */
-    function select(id) {
-        console.log("Select key events by test case id", id)
+
+    function clearAutomaticKeys() {
+
+    }
+
+    function appendAutomaticKey(name, code) {
+        console.log(("automatic key: %1 %2").arg(name).arg(code))
     }
 }

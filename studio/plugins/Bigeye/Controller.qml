@@ -25,31 +25,9 @@ Item {
 
     property KeyEventModel model: KeyEventModel { }
 
-    property bool automation: false
-
     property int timestamp: 0
 
     property string preview: "images/screenshot.png"
-
-    function setPressRange(start, stop) {
-        console.log("Key press range from %1 to %2".arg(start).arg(stop))
-    }
-
-    function setReleaseRange(start, stop) {
-        console.log("Key release range from %1 to %2".arg(start).arg(stop))
-    }
-
-    function clearAutomaticKeys() {
-
-    }
-
-    function appendAutomaticKey(name, code) {
-        console.log(("automatic key: %1 %2").arg(name).arg(code))
-    }
-
-    function setAutomation(enabled) {
-        automation = enabled
-    }
 
     function start(name, category) {
         console.log("Start Test Case:%1 %2".arg(name).arg(category))

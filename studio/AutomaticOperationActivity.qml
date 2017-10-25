@@ -28,7 +28,7 @@ Pane {
 
     state: "stopped"
 
-    Controller {
+    AutomaticController {
         id: controller
     }
 
@@ -56,12 +56,12 @@ Pane {
 
             CpuInfoFragment {
                 Layout.fillWidth: true
-                Layout.minimumHeight: 240
+                Layout.minimumHeight: 160
             }
 
             ProcessInfoFragment {
                 Layout.fillWidth: true
-                Layout.minimumHeight: 320
+                Layout.minimumHeight: 240
             }
 
             KeyLoggerView {
@@ -127,7 +127,6 @@ Pane {
                         controller.setPressRange(pressRange.first.value, pressRange.second.value)
                         controller.setReleaseRange(releaseRange.first.value, releaseRange.second.value)
                         buttonPanel.setup()
-                        controller.setAutomation(true)
                         controller.start(testCase.text, "automatic")
                     } else {
                         randomOperation.state = "stopped"

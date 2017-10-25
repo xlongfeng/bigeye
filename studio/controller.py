@@ -39,6 +39,7 @@ from video import *
 
 class Controller(QObject):
     modelChanged = pyqtSignal()
+    _model = None
 
     @pyqtProperty(KeyEventModel, notify=modelChanged)
     def model(self):
@@ -50,6 +51,7 @@ class Controller(QObject):
         self.modelChanged.emit()
 
     previewChanged = pyqtSignal()
+    _preview = None
 
     @pyqtProperty(str, notify=previewChanged)
     def preview(self):
@@ -61,20 +63,9 @@ class Controller(QObject):
         self.previewChanged.emit()
     
     def __init__(self, parent=None):
-        super(QObject, self).__init__(parent)
-        self._model = None
-        self._preview = None
+        super(Controller, self).__init__(parent)
         self._testCaseId = None
         self._startTime = None
-
-        self._automaticKeys = []
-        self._automaticMode = False
-        self._automaticTimer = QTimer(self)
-        self._automaticTimer.setSingleShot(True)
-        self._automaticTimer.timeout.connect(self.automaticKeyReport)
-        self._automaticNextKey = None
-        self._pressRange = None
-        self._releaseRange = None
 
         self._fishboneConnector = FishboneConnector.instance()
 
@@ -84,27 +75,7 @@ class Controller(QObject):
         self._videoRecorder.frameChanged.connect(self.onPreviewChanged)
 
         self.model = KeyEventModel(self)
-    
-    @pyqtSlot(int, int)
-    def setPressRange(self, start, stop):
-        self._pressRange = range(start, stop + 1)
-    
-    @pyqtSlot(int, int)
-    def setReleaseRange(self, start, stop):
-        self._releaseRange = range(start, stop + 1)
 
-    @pyqtSlot()
-    def clearAutomaticKeys(self):
-        self._automaticKeys.clear()
-
-    @pyqtSlot(str, int)
-    def appendAutomaticKey(self, name, code):
-        self._automaticKeys.append(dict(name=name, code=code))
-    
-    @pyqtSlot(bool)
-    def setAutomation(self, enabled):
-        self._automaticMode = enabled
-    
     @pyqtSlot(str, str)
     def start(self, name, category):
         testcase = TestCase(name=name, category=category, timestamp=datetime.now())
@@ -120,21 +91,67 @@ class Controller(QObject):
             self._fishboneConnector.screenHeight)
         self._videoRecorder.setFilename(str(self._testCaseId))
         self._videoRecorder.start()
-
-        if self._automaticMode:
-            self._automaticNextKey = None
-            self._automaticTimer.start(choice(self._pressRange) * 1000)
     
     @pyqtSlot()
     def stop(self):
         self._videoRecorder.stop()
-        if self._automaticMode:
-            self._automaticMode = False
-            self._automaticTimer.stop()
 
-            if self._automaticNextKey is not None:
-                self.report(self._automaticNextKey['name'], self._automaticNextKey['code'], False)
-                self._automaticNextKey = None
+    @pyqtSlot(str, int, bool)
+    def report(self, name, code, down):
+        delta = datetime.now() - self._startTime
+        timestamp = delta.days * 24 * 60 * 60 * 1000
+        timestamp += delta.seconds * 1000
+        timestamp += round(delta.microseconds / 1000)
+        self._model.append(name, code, down, timestamp, self._testCaseId)
+        self._keyEvent.report(code, down)
+
+    @pyqtSlot()
+    def onPreviewChanged(self):
+        self.preview = "image://video/timestamp=" + str(datetime.now().timestamp())
+
+
+class AutomaticController(Controller):
+    def __init__(self, parent=None):
+        super(AutomaticController, self).__init__(parent)
+
+        self._automaticKeys = []
+        self._automaticTimer = QTimer(self)
+        self._automaticTimer.setSingleShot(True)
+        self._automaticTimer.timeout.connect(self.automaticKeyReport)
+        self._automaticNextKey = None
+        self._pressRange = None
+        self._releaseRange = None
+
+    @pyqtSlot(int, int)
+    def setPressRange(self, start, stop):
+        self._pressRange = range(start, stop + 1)
+
+    @pyqtSlot(int, int)
+    def setReleaseRange(self, start, stop):
+        self._releaseRange = range(start, stop + 1)
+
+    @pyqtSlot()
+    def clearAutomaticKeys(self):
+        self._automaticKeys.clear()
+
+    @pyqtSlot(str, int)
+    def appendAutomaticKey(self, name, code):
+        self._automaticKeys.append(dict(name=name, code=code))
+
+    @pyqtSlot(str, str)
+    def start(self, name, category):
+        super().start(name, category)
+        self._automaticNextKey = None
+        self._automaticTimer.start(choice(self._pressRange) * 1000)
+
+    @pyqtSlot()
+    def stop(self):
+        super().stop()
+        self._automaticTimer.stop()
+
+        if self._automaticNextKey is not None:
+            self.report(self._automaticNextKey['name'], self._automaticNextKey['code'], False)
+            self._automaticNextKey = None
 
     @pyqtSlot()
     def automaticKeyReport(self):
@@ -147,22 +164,66 @@ class Controller(QObject):
             self._automaticNextKey = None
             self._automaticTimer.start(choice(self._pressRange) * 1000)
 
-    @pyqtSlot(str, int, bool)
-    def report(self, name, code, down):
-        delta = datetime.now() - self._startTime
-        timestamp = delta.days * 24 * 60 * 60 * 1000
-        timestamp += delta.seconds * 1000
-        timestamp += round(delta.microseconds / 1000)
-        self._model.append(name, code, down, timestamp, self._testCaseId)
-        self._keyEvent.report(code, down)
-        """
-        if not down:
-            Process.instance().execute("date")
-            Process.instance().execute("date", ["-R"], True)
-            FileTransfer.instance().put("bigeye.py", "/tmp/bigeye.py")
-            FileTransfer.instance().get("repeater", "repeater")
-        """
+
+class ReplayController(Controller):
+    replayModelChanged = pyqtSignal()
+    _replayModel = None
+
+    @pyqtProperty(KeyEventModel, notify=replayModelChanged)
+    def replayModel(self):
+        return self._replayModel
+
+    @replayModel.setter
+    def replayModel(self, model):
+        self._replayModel = model
+        self.replayModelChanged.emit()
+
+    _replayTestCase = None
+
+    replayTestCaseIdChanged = pyqtSignal()
+    _replayTestCaseId = None
+
+    @pyqtProperty(int, notify=replayTestCaseIdChanged)
+    def replayTestCaseId(self):
+        return self._replayTestCaseId
+
+    @replayTestCaseId.setter
+    def replayTestCaseId(self, id):
+        self._replayTestCaseId = id
+        self.replayTestCaseIdChanged.emit()
+
+    testCaseNameChanged = pyqtSignal()
+    _testCaseName = None
+
+    @pyqtProperty(str, notify=testCaseNameChanged)
+    def testCaseName(self):
+        return self._testCaseName
+
+    @testCaseName.setter
+    def testCaseName(self, name):
+        self._testCaseName = name
+        self.testCaseNameChanged.emit()
+
+    def __init__(self, parent=None):
+        super(ReplayController, self).__init__(parent)
+        self._replayModel = KeyEventModel(self)
+        self.replayTestCaseIdChanged.connect(self.onReplayTestCaseIdChanged)
 
     @pyqtSlot()
-    def onPreviewChanged(self):
-        self.preview = "image://video/timestamp=" + str(datetime.now().timestamp())
+    def onReplayTestCaseIdChanged(self):
+        self._replayTestCase = session.query(TestCase).filter(TestCase.id == self.replayTestCaseId).one()
+        self.testCaseName = self._replayTestCase.name
+        self._replayModel.select(self.replayTestCaseId)
+        """
+        print(testcase.name, testcase.category, testcase.timestamp)
+        for keyevent in testcase.key_event_list:
+            print(keyevent.id, keyevent.name, keyevent.code, keyevent.down, keyevent.timestamp)
+        """
+
+    @pyqtSlot(str, str)
+    def start(self, name, category):
+        super().start(name, category)
+
+    @pyqtSlot()
+    def stop(self):
+        super().stop()

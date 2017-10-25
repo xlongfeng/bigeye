@@ -47,6 +47,8 @@ if __name__ == '__main__':
     qmlRegisterType(KeyEventModel, "Bigeye", 1, 0, "KeyEventModel")
     qmlRegisterType(ProcessModel, "Bigeye", 1, 0, "ProcessModel")
     qmlRegisterType(Controller, "Bigeye", 1, 0, "Controller")
+    qmlRegisterType(AutomaticController, "Bigeye", 1, 0, "AutomaticController")
+    qmlRegisterType(ReplayController, "Bigeye", 1, 0, "ReplayController")
     qmlRegisterType(Screenshot, "Bigeye", 1, 0, "Screenshot")
     qmlRegisterType(ScreenRecorder, "Bigeye", 1, 0, "ScreenRecorder")
 

@@ -36,10 +36,10 @@ class TestCaseModel(QAbstractListModel):
     CategoryRole = Qt.UserRole + 3
     TimestampRole = Qt.UserRole + 4
     
-    _roles = { IdRole: b"id", NameRole: b"name", CategoryRole: b"category", TimestampRole: b"timestamp"}
+    _roles = { IdRole: b"identity", NameRole: b"name", CategoryRole: b"category", TimestampRole: b"timestamp"}
     
     def __init__(self, parent=None):
-        super(QAbstractListModel, self).__init__(parent)
+        super(TestCaseModel, self).__init__(parent)
         
         self._testCases = []
         self.select()
