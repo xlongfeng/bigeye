@@ -105,9 +105,9 @@ class Controller(QObject):
     def setAutomation(self, enabled):
         self._automaticMode = enabled
     
-    @pyqtSlot(str)
-    def start(self, name):
-        testcase = TestCase(name=name, timestamp=datetime.now())
+    @pyqtSlot(str, str)
+    def start(self, name, category):
+        testcase = TestCase(name=name, category=category, timestamp=datetime.now())
         session.add(testcase)
         session.commit()
         self._testCaseId = testcase.id

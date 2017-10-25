@@ -23,7 +23,6 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     id: container
-    property Item exampleItem
     width: ListView.view.width
     height: button.implicitHeight + 32
 
@@ -33,12 +32,12 @@ Rectangle {
         GradientStop {
             position: 0
             Behavior on color {ColorAnimation { duration: 100 }}
-            color: button.pressed ? "#e0e0e0" : "#fff"
+            color: mouseArea.pressed ? "#e0e0e0" : "#fff"
         }
         GradientStop {
             position: 1
             Behavior on color {ColorAnimation { duration: 100 }}
-            color: button.pressed ? "#e0e0e0" : button.containsMouse ? "#f5f5f5" : "#eee"
+            color: mouseArea.pressed ? "#e0e0e0" : mouseArea.containsMouse ? "#f5f5f5" : "#eee"
         }
     }
 
@@ -86,7 +85,6 @@ Rectangle {
                 wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                 styleColor: "white"
                 style: Text.Raised
-
             }
             Text {
                 id: buttonLabel2

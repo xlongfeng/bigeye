@@ -81,7 +81,7 @@ Pane {
                 onPressed: {
                     if (manualOperation.state === "stopped") {
                         manualOperation.state = "started"
-                        controller.start(testCase.text)
+                        controller.start(testCase.text, "manual")
                     } else {
                         manualOperation.state = "stopped"
                         controller.stop()

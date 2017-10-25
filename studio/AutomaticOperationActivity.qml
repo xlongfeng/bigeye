@@ -128,7 +128,7 @@ Pane {
                         controller.setReleaseRange(releaseRange.first.value, releaseRange.second.value)
                         buttonPanel.setup()
                         controller.setAutomation(true)
-                        controller.start(testCase.text)
+                        controller.start(testCase.text, "automatic")
                     } else {
                         randomOperation.state = "stopped"
                         controller.stop()

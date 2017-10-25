@@ -33,9 +33,10 @@ from orm import *
 class TestCaseModel(QAbstractListModel):
     IdRole = Qt.UserRole + 1
     NameRole = Qt.UserRole + 2
-    TimestampRole = Qt.UserRole + 3
+    CategoryRole = Qt.UserRole + 3
+    TimestampRole = Qt.UserRole + 4
     
-    _roles = { IdRole: b"id", NameRole: b"name", TimestampRole: b"timestamp"}
+    _roles = { IdRole: b"id", NameRole: b"name", CategoryRole: b"category", TimestampRole: b"timestamp"}
     
     def __init__(self, parent=None):
         super(QAbstractListModel, self).__init__(parent)
@@ -64,8 +65,10 @@ class TestCaseModel(QAbstractListModel):
             return testcase.id
         if role == self.NameRole:
             return testcase.name
+        if role == self.CategoryRole:
+            return testcase.category
         if role == self.TimestampRole:
-            return testcase.timestamp.isoformat()
+            return testcase.timestamp.strftime("%Y-%m-%d %H:%M:%S")
         
         return QVariant()
     

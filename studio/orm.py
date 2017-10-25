@@ -38,6 +38,7 @@ class TestCase(Base):
     
     id = Column(Integer, primary_key=True)
     name = Column(String)
+    category = Column(String)
     timestamp = Column(DateTime)
 
 

@@ -23,42 +23,49 @@ ListModel {
     ListElement {
        identity: 1
        name: "view npb list test"
+       category: "manual"
        timestamp: "2017-7-13 09:32:36"
     }
 
     ListElement {
        identity: 2
        name: "button random press test"
+       category: "manual"
        timestamp: "2017-7-13 10:42:49"
     }
 
     ListElement {
        identity: 3
        name: "trend dialog open repetition"
+       category: "manual"
        timestamp: "2017-7-14 10:32:26"
     }
 
     ListElement {
        identity: 4
        name: "Test Case 4"
+       category: "automatic"
        timestamp: "2017-7-14 11:30:56"
     }
 
     ListElement {
        identity: 5
        name: "Test Case 5"
+       category: "automatic"
        timestamp: "2017-7-15 15:42:16"
     }
 
     ListElement {
        identity: 6
        name: "Test Case 6"
+       category: "replay"
        timestamp: "2017-7-15 16:32:25"
     }
 
     ListElement {
        identity: 7
        name: "Test Case 7"
+       category: "automatic"
        timestamp: "2017-7-16 13:32:43"
     }
 
