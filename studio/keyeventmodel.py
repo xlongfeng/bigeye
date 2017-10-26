@@ -63,7 +63,7 @@ class KeyEventModel(QAbstractListModel):
     def select(self, test_case_id):
         self.beginResetModel()
         self._keyEvents.clear()
-        for instance in session.query(KeyEvent).filter(KeyEvent.test_case_id == test_case_id).order_by(desc(KeyEvent.id)):
+        for instance in session.query(KeyEvent).filter(KeyEvent.test_case_id == test_case_id):
             self._keyEvents.append(instance)
         self.endResetModel()
     

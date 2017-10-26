@@ -23,6 +23,8 @@ import Bigeye 1.0
 Controller {
     id: controller
 
+    property int replayKeyEventIndex
+
     property int replayTestCaseId
 
     property KeyEventModel replayModel: KeyEventModel { }

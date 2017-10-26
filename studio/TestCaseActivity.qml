@@ -26,6 +26,12 @@ import Bigeye 1.0
 Item {
     id: activity
 
+    TestCaseModel {
+        id: testCaseModel
+    }
+
+    StackView.onActivated: testCaseModel.select()
+
     ListView {
         id: testCase
 
@@ -33,8 +39,7 @@ Item {
         height: parent.height
         anchors.horizontalCenter: parent.horizontalCenter
         clip: true
-        model: TestCaseModel { }
-
+        model: testCaseModel
         delegate: TestCaseDelegate {
             onClicked: {
                 activity.StackView.view.push("ReplayActivity.qml", {"identity": identity})

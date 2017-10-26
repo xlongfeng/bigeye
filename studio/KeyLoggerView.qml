@@ -25,6 +25,7 @@ import Bigeye 1.0
 
 ListView {
     id: logger
+    highlightFollowsCurrentItem: false
     delegate: Text {
         text: {
             var t = timestamp
@@ -41,6 +42,7 @@ ListView {
             ms = "00%1".arg(ms).slice(-3)
             return "%1:%2:%3.%4 -- Key %5 <%6>".arg(h).arg(m).arg(s).arg(ms).arg(down ? " Pressed" : " Release").arg(name)
         }
+        color: ListView.isCurrentItem & highlightFollowsCurrentItem ? "red" : "black"
     }
 
     Connections {

@@ -179,9 +179,22 @@ class ReplayController(Controller):
         self.replayModelChanged.emit()
 
     _replayTestCase = None
+    _replayKeyEvents = None
+    _replayKeyEventIndex = -1
+    _replayTestCaseId = None
+
+    replayKeyEventIndexChanged = pyqtSignal()
+
+    @pyqtProperty(int, notify=replayKeyEventIndexChanged)
+    def replayKeyEventIndex(self):
+        return self._replayKeyEventIndex
+
+    @replayKeyEventIndex.setter
+    def replayKeyEventIndex(self, index):
+        self._replayKeyEventIndex = index
+        self.replayKeyEventIndexChanged.emit()
 
     replayTestCaseIdChanged = pyqtSignal()
-    _replayTestCaseId = None
 
     @pyqtProperty(int, notify=replayTestCaseIdChanged)
     def replayTestCaseId(self):
@@ -208,22 +221,46 @@ class ReplayController(Controller):
         super(ReplayController, self).__init__(parent)
         self._replayModel = KeyEventModel(self)
         self.replayTestCaseIdChanged.connect(self.onReplayTestCaseIdChanged)
+        self._replayTimer = QTimer(self)
+        self._replayTimer.setSingleShot(True)
+        self._replayTimer.timeout.connect(self.replayKeyReport)
+        self._replayKeyEvent = None
 
     @pyqtSlot()
     def onReplayTestCaseIdChanged(self):
         self._replayTestCase = session.query(TestCase).filter(TestCase.id == self.replayTestCaseId).one()
+        self._replayKeyEvents = self._replayTestCase.key_event_list
         self.testCaseName = self._replayTestCase.name
         self._replayModel.select(self.replayTestCaseId)
-        """
-        print(testcase.name, testcase.category, testcase.timestamp)
-        for keyevent in testcase.key_event_list:
-            print(keyevent.id, keyevent.name, keyevent.code, keyevent.down, keyevent.timestamp)
-        """
 
     @pyqtSlot(str, str)
     def start(self, name, category):
         super().start(name, category)
+        self.replayKeyEventIndex = -1
+        self.nextReplayKeyReport()
 
     @pyqtSlot()
     def stop(self):
         super().stop()
+        self._replayTimer.stop()
+
+    @pyqtSlot()
+    def replayKeyReport(self):
+        self.report(self._replayKeyEvent.name, self._replayKeyEvent.code, self._replayKeyEvent.down)
+        self.nextReplayKeyReport()
+
+    def nextReplayKeyReport(self):
+        self.replayKeyEventIndex += 1
+        if self.replayKeyEventIndex == len(self._replayTestCase.key_event_list):
+            print("replay complete")
+            self.replayKeyEventIndex = -1
+            self._replayKeyEvent = None
+            return
+        if self._replayKeyEvent is not None:
+            lastKeyEvent = self._replayKeyEvent
+            self._replayKeyEvent = self._replayKeyEvents[self.replayKeyEventIndex]
+            timestamp = self._replayKeyEvent.timestamp - lastKeyEvent.timestamp
+        else:
+            self._replayKeyEvent = self._replayKeyEvents[self.replayKeyEventIndex]
+            timestamp = self._replayKeyEvent.timestamp
+        self._replayTimer.start(timestamp)

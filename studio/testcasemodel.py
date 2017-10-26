@@ -42,7 +42,6 @@ class TestCaseModel(QAbstractListModel):
         super(TestCaseModel, self).__init__(parent)
         
         self._testCases = []
-        self.select()
     
     @pyqtSlot()
     def select(self):

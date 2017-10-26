@@ -67,6 +67,8 @@ Pane {
 
             KeyLoggerView {
                 id: replayKeyLogger
+                currentIndex: controller.replayKeyEventIndex
+                highlightFollowsCurrentItem : true
                 model: controller.replayModel
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -116,7 +118,7 @@ Pane {
         State {
             name: "stopped"
             PropertyChanges { target: testCase; enabled: true }
-            PropertyChanges { target: recordButton; text: qsTr("Start") }
+            PropertyChanges { target: recordButton; text: qsTr("Replay") }
         }
     ]
 }
