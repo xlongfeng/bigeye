@@ -26,6 +26,8 @@ ItemDelegate {
     width: ListView.view.width
     hoverEnabled: true
 
+    signal removed
+
     contentItem: Item {
         id: content
         width: container.width
@@ -58,7 +60,7 @@ ItemDelegate {
                 top: parent.top
                 bottom: parent.bottom
                 left: image.right
-                right: parent.right
+                right: deleteButton.left
             }
             implicitHeight: col.height
             height: implicitHeight
@@ -96,6 +98,27 @@ ItemDelegate {
                     font.pixelSize: 12
                 }
             }
+        }
+
+        Button {
+            id: deleteButton
+            anchors {
+                right: parent.right
+                rightMargin: 16
+                verticalCenter: parent.verticalCenter
+            }
+            contentItem: Image {
+                source: "images/delete.png"
+                sourceSize: "24x24"
+                opacity: container.hovered ? 1.0 : 0
+                Behavior on opacity {
+                    NumberAnimation { duration: 100 }
+                }
+            }
+            background: Item {
+            }
+
+            onClicked: container.removed()
         }
     }
 

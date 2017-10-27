@@ -73,6 +73,7 @@ class KeyEventModel(QAbstractListModel):
         self.beginRemoveRows(parent, first, last-1)
         del self._keyEvents[first:last]
         self.endRemoveRows()
+        return True
     
     def rowCount(self, parent=QModelIndex()):
         return len(self._keyEvents)

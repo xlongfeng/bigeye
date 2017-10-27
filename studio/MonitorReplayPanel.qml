@@ -32,8 +32,7 @@ Rectangle {
         height: 96
         anchors.centerIn: parent
 
-        rows: 2
-        columns: 8
+        columns: 4
 
         RowLayout {
             SpinBox {
@@ -44,7 +43,20 @@ Rectangle {
             }
 
             Label {
-                text: "Replay times"
+                text: "Repeat times"
+            }
+        }
+
+        RowLayout {
+            SpinBox {
+                editable: true
+                from: 1
+                to: 300
+                value: 30
+            }
+
+            Label {
+                text: "interval time"
             }
         }
 

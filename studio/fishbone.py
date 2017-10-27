@@ -139,7 +139,7 @@ class FishboneConnector(RepeaterDelegate):
     def startDaemon(self):
         block, ostream = self._repeater.getRequestBlock()
         ostream.writeQString('startDaemon')
-        with open("bigeye-daemon", "rb") as f:
+        with open("apps/bigeye-daemon", "rb") as f:
             ostream.writeBytes(f.read())
         self._repeater.submitRequestBlock(block)
         # start a start daemon timeout timer to detect daemon launched failed

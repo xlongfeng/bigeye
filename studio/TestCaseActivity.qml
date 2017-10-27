@@ -41,12 +41,28 @@ Item {
         clip: true
         model: testCaseModel
         delegate: TestCaseDelegate {
+            id: delegate
             onClicked: {
                 activity.StackView.view.push("ReplayActivity.qml", {"identity": identity})
             }
-
             onPressAndHold: {
-                console.log("press and hold")
+                menu.x = (width - menu.width) / 2
+                menu.y = height
+                menu.open()
+            }
+
+            onRemoved: {
+                testCaseModel.remove(index)
+            }
+
+            Menu {
+                id: menu
+                MenuItem {
+                    text: "Delete"
+                    onTriggered: {
+                        testCaseModel.remove(index)
+                    }
+                }
             }
         }
 

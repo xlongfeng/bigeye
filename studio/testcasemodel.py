@@ -50,6 +50,21 @@ class TestCaseModel(QAbstractListModel):
         for instance in session.query(TestCase).order_by(desc(TestCase.id)):
             self._testCases.append(instance)
         self.endResetModel()
+
+    @pyqtSlot(int)
+    def remove(self, row):
+        self.removeRow(row)
+
+    def removeRows(self, row, count, parent=QModelIndex()):
+        first = row
+        last = row+count
+        self.beginRemoveRows(parent, first, last-1)
+        for testCase in self._testCases[first:last]:
+            session.delete(testCase)
+        session.commit()
+        del self._testCases[first:last]
+        self.endRemoveRows()
+        return True
     
     def rowCount(self, parent=QModelIndex()):
         return len(self._testCases)
