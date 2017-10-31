@@ -23,8 +23,16 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     property var controller
+
     width: optionBox.width + 20
     height: optionBox.height + 20
+
+    function submit() {
+        controller.repeatTimes = repeatTimes.value
+        controller.intervalTime = intervalTime.value
+        controller.rebootOption = rebootOption.checked
+        controller.restoreOption = restoreOption.checked
+    }
 
     GridLayout {
         id: optionBox
@@ -36,6 +44,7 @@ Rectangle {
 
         RowLayout {
             SpinBox {
+                id: repeatTimes
                 editable: true
                 from: 1
                 to: 10000
@@ -49,22 +58,25 @@ Rectangle {
 
         RowLayout {
             SpinBox {
+                id: intervalTime
                 editable: true
                 from: 1
                 to: 300
-                value: 30
+                value: 5
             }
 
             Label {
-                text: "interval time"
+                text: "Interval time"
             }
         }
 
         CheckBox {
+            id: rebootOption
             text: "Reboot after completion"
         }
 
         CheckBox {
+            id: restoreOption
             text: "Restore configuration"
         }
     }

@@ -30,4 +30,14 @@ Controller {
     property KeyEventModel replayModel: KeyEventModel { }
 
     property string testCaseName: "Manual Operation"
+
+    property int repeatTimes
+
+    property int intervalTime
+
+    property int loopCounter
+
+    property bool rebootOption
+
+    property bool restoreOption
 }

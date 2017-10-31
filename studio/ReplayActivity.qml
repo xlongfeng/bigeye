@@ -40,13 +40,27 @@ Pane {
         anchors.fill: parent
 
         MonitorScreen {
+            id: screen
             source: controller.preview
+
+            Label {
+                id: loopCounter
+                text: "%1".arg(controller.loopCounter)
+                color: "red"
+                opacity: 0.5
+                font.pixelSize: 32
+                anchors.top: screen.top
+                anchors.topMargin: (screen.height - controller.screenHeight) / 2 + 32
+                anchors.left: screen.left
+                anchors.leftMargin: (screen.width - controller.screenWidth) / 2 + 32
+            }
 
             Layout.row: 0
             Layout.column: 0
         }
 
         MonitorReplayPanel {
+            id: optionPanel
             state: activity.state
             controller: controller
 
@@ -90,6 +104,7 @@ Pane {
                     currentIndex: controller.replayKeyEventIndex
                     highlightFollowsCurrentItem : true
                     model: controller.replayModel
+                    anchors.fill: parent
                 }
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -118,6 +133,7 @@ Pane {
                 onPressed: {
                     if (activity.state === "stopped") {
                         activity.state = "started"
+                        optionPanel.submit()
                         controller.start(testCase.text, "replay")
                     } else {
                         activity.state = "stopped"
@@ -137,11 +153,13 @@ Pane {
     states: [
         State {
             name: "started"
+            PropertyChanges { target: loopCounter; opacity: 0.5 }
             PropertyChanges { target: testCase; enabled: false }
             PropertyChanges { target: recordButton; text: qsTr("Stop") }
         },
         State {
             name: "stopped"
+            PropertyChanges { target: loopCounter; opacity: 0.0 }
             PropertyChanges { target: testCase; enabled: true }
             PropertyChanges { target: recordButton; text: qsTr("Replay") }
         }
