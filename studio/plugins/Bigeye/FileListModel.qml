@@ -18,31 +18,17 @@
 
 
 import QtQuick 2.7
-import Bigeye 1.0
 
-Item {
-    id: controller
-
-    property FileListModel fileListModel: FileListModel { }
-
-    property KeyEventModel model: KeyEventModel { }
-
-    property int timestamp: 0
-
-    property string preview: "images/screenshot.png"
-
-    function start(name, category) {
-        console.log("Start Test Case:%1 %2".arg(name).arg(category))
-        model.clear()
+ListModel {
+    ListElement {
+       name: "/cfgdir/save0"
     }
 
-    function stop() {
-
+    ListElement {
+       name: "/cfgdir/save1"
     }
 
-    function report(name, code, down) {
-        console.log("%1 %2 %3".arg(name).arg(code).arg(down))
-        timestamp += 1000
-        model.append({"name": name, "code": code, "down": down, "timestamp": timestamp})
+    ListElement {
+       name: "/cfgdir/save3"
     }
 }

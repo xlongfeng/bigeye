@@ -52,19 +52,40 @@ Pane {
         }
 
         ColumnLayout {
-
-            CpuInfoFragment {
+            GroupBox {
+                title: qsTr("CPU Usage")
+                CpuInfoFragment {
+                    anchors.fill: parent
+                }
                 Layout.fillWidth: true
                 Layout.minimumHeight: 160
             }
 
-            ProcessInfoFragment {
+            GroupBox {
+                title: qsTr("Processes")
+                ProcessInfoFragment {
+                    anchors.fill: parent
+                }
                 Layout.fillWidth: true
                 Layout.minimumHeight: 240
             }
 
-            KeyLoggerView {
-                model: controller.model
+            GroupBox {
+                title: qsTr("Saved File List")
+                FileListFragment {
+                    model: controller.fileListModel
+                    anchors.fill: parent
+                }
+                Layout.fillWidth: true
+                Layout.minimumHeight: 160
+            }
+
+            GroupBox {
+                title: qsTr("Keystroke Logger")
+                KeyLoggerView {
+                    model: controller.model
+                    anchors.fill: parent
+                }
                 Layout.fillWidth: true
                 Layout.fillHeight: true
             }

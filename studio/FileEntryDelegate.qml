@@ -18,31 +18,10 @@
 
 
 import QtQuick 2.7
-import Bigeye 1.0
+import QtQuick.Controls 2.2
+import QtQuick.Layouts 1.3
 
-Item {
-    id: controller
-
-    property FileListModel fileListModel: FileListModel { }
-
-    property KeyEventModel model: KeyEventModel { }
-
-    property int timestamp: 0
-
-    property string preview: "images/screenshot.png"
-
-    function start(name, category) {
-        console.log("Start Test Case:%1 %2".arg(name).arg(category))
-        model.clear()
-    }
-
-    function stop() {
-
-    }
-
-    function report(name, code, down) {
-        console.log("%1 %2 %3".arg(name).arg(code).arg(down))
-        timestamp += 1000
-        model.append({"name": name, "code": code, "down": down, "timestamp": timestamp})
-    }
+ItemDelegate {
+    width: ListView.view.width
+    text: name
 }
