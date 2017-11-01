@@ -145,6 +145,10 @@ class Miscellany(QObject):
         self._miscellanyRepeater.setOption("video", self.getScreenResolutionValue(self.screenResolutionIndex))
 
     @pyqtSlot()
+    def unitTest(self):
+        Process.instance().executeRemote("apps/unittest", detached=True, preCommand="killall unittest")
+
+    @pyqtSlot()
     def reboot(self):
         Process.instance().execute('reboot')
 

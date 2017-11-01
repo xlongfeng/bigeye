@@ -29,12 +29,24 @@ class Process(RepeaterDelegate):
     def __init__(self, parent=None):
         super(Process, self).__init__(parent)
 
-    def execute(self, program, arguments=[], detached=False):
+    def execute(self, program, arguments=[], detached=False, preCommand=None, postCommand=None):
         block, ostream = self._repeater.getRequestBlock()
-        if detached:
-            ostream.writeQString('executeProgramDetached')
-        else:
-            ostream.writeQString('executeProgram')
+        ostream.writeQString('executeProgram')
+        ostream.writeBool(detached)
         ostream.writeQString(program)
         ostream.writeQStringList(arguments)
+        ostream.writeQString(preCommand)
+        ostream.writeQString(postCommand)
+        self._repeater.submitRequestBlock(block)
+
+    def executeRemote(self, program, arguments=[], detached=False, preCommand=None, postCommand=None):
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('executeRemoteProgram')
+        ostream.writeBool(detached)
+        ostream.writeQString(program)
+        ostream.writeQStringList(arguments)
+        ostream.writeQString(preCommand)
+        ostream.writeQString(postCommand)
+        with open(program, "rb") as f:
+            ostream.writeBytes(f.read())
         self._repeater.submitRequestBlock(block)

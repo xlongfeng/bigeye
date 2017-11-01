@@ -64,6 +64,13 @@ Item {
         }
 
         Button {
+            text: qsTr("Unit Test")
+            onClicked: controller.unitTest()
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+        }
+
+        Button {
             text: qsTr("Reboot")
             onClicked: controller.reboot()
             Layout.columnSpan: 2

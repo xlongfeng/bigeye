@@ -27,6 +27,10 @@ QtObject {
     property var screenResolutionOptions: ["800x480", "800x600", "1024x768", "1280x800", "1280x1024"]
     property int screenResolutionIndex: 3
 
+    function  unitTest() {
+        console.log("Launch unit test")
+    }
+
     function reboot() {
         console.log("System reboot ...")
     }
