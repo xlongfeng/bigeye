@@ -47,6 +47,8 @@ private slots:
     void executeProgramDetached(QDataStream &stream);
     void fileTransferPut(QDataStream &stream);
     void fileTransferGet(QDataStream &stream);
+    void setOption(QDataStream &stream);
+    void getOption(QDataStream &stream);
 
 private:
     void sendExtendedData(const QString &category, QByteArray &buffer);

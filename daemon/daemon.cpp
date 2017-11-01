@@ -23,6 +23,7 @@
 #include <QDebug>
 
 #include "daemon.h"
+#include "option.h"
 
 
 Daemon::Daemon(QObject *parent) : Bigeye(parent)
@@ -144,6 +145,30 @@ void Daemon::fileTransferGet(QDataStream &stream)
 
         linker->tramsmitBytes(escape(block));
     }
+}
+
+void Daemon::setOption(QDataStream &stream)
+{
+    QString name, value;
+    stream >> name >> value;
+    option->setenv(name.toLatin1().data(), value.toLatin1().data());
+    option->saveenv();
+}
+
+void Daemon::getOption(QDataStream &stream)
+{
+    QString name;
+    stream >> name;
+    QString value = option->getenv(name.toLatin1().data());
+
+    QByteArray block;
+    QDataStream istream(&block, QIODevice::WriteOnly);
+    istream.setVersion(QDataStream::Qt_4_8);
+    istream << QString("Bigeye");
+    istream << QString("respGetOption");
+    istream << name << value;
+
+    linker->tramsmitBytes(escape(block));
 }
 
 void Daemon::sendExtendedData(const QString &category, QByteArray &buffer)
