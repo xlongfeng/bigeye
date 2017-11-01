@@ -27,6 +27,10 @@ import Bigeye 1.0
 Item {
     id: activity
 
+    Miscellany {
+        id: controller
+    }
+
     GridLayout {
         width: 240
         height: parent.height
@@ -38,7 +42,11 @@ Item {
         }
 
         ComboBox {
-            model: ["Close", "TTL to RS232", "USB to RS232"]
+            model: controller.consoleOptions
+            currentIndex: controller.consoleIndex
+            onActivated: {
+                controller.consoleIndex = index
+            }
             Layout.fillWidth: true
         }
 
@@ -47,18 +55,24 @@ Item {
         }
 
         ComboBox {
-            model: ["800x480", "800x600", "1024x768", "1280x800", "1280x1024"]
+            model: controller.screenResolutionOptions
+            currentIndex: controller.screenResolutionIndex
+            onActivated: {
+                controller.screenResolutionIndex = index
+            }
             Layout.fillWidth: true
         }
 
         Button {
             text: qsTr("Reboot")
+            onClicked: controller.reboot()
             Layout.columnSpan: 2
             Layout.fillWidth: true
         }
 
         Button {
             text: qsTr("Poweroff")
+            onClicked: controller.poweroff()
             Layout.columnSpan: 2
             Layout.fillWidth: true
         }
