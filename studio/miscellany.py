@@ -29,14 +29,37 @@ from process import *
 
 
 class MiscellanyRepeater(RepeaterDelegate):
+    optionArrived = pyqtSignal(str, str)
+
     def __init__(self, parent=None):
         super(MiscellanyRepeater, self).__init__(parent)
 
-    def setBootOption(self, name, value=None):
-        print(name, value)
+    def setOption(self, name, value=None):
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('setOption')
+        ostream.writeQString(name)
+        ostream.writeQString(value)
+        self._repeater.submitRequestBlock(block)
+
+    def getOption(self, name):
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('getOption')
+        ostream.writeQString(name)
+        self._repeater.submitRequestBlock(block)
+
+    def respGetOption(self, istream):
+        name = istream.readQString()
+        value = istream.readQString()
+        self.optionArrived.emit(name, value)
 
 
 class Miscellany(QObject):
+
+    _consoleOptionValues = [
+        "null",
+        "ttymxc0,115200",
+        "ttyUSB0,115200"
+    ]
 
     @pyqtProperty(list)
     def consoleOptions(self):
@@ -54,9 +77,17 @@ class Miscellany(QObject):
         self._consoleIndex = model
         self.consoleIndexChanged.emit()
 
+    _screenResolutionOptionValues = [
+        "mxcfb0:dev=ldb,SEIKO-WVGA,if=RGB24 video=mxcfb1:dev=hdmi,1280x1024M@60,if=RGB24",
+        "mxcfb0:dev=ldb,LDB-SVGA,if=RGB666",
+        "mxcfb0:dev=ldb,LDB-XGA,if=RGB666",
+        "mxcfb0:dev=ldb,LDB-WXGA,if=RGB24 video=mxcfb1:dev=hdmi,1280x1024M@60,if=RGB24",
+        "mxcfb0:dev=ldb,LDB-SXGA,if=RGB666"
+    ]
+
     @pyqtProperty(list)
     def screenResolutionOptions(self):
-        return ["800x480", "800x600", "1024x768", "1280x800", "1280x1024"]
+        return ["800x480 (P7)", "800x600 (G60)", "1024x768 (G70)", "1280x800 (P10)", "1280x1024 (G80)"]
     
     _screenResolutionIndex = 0
     screenResolutionIndexChanged = pyqtSignal()
@@ -72,34 +103,46 @@ class Miscellany(QObject):
 
     def __init__(self, parent=None):
         super(Miscellany, self).__init__(parent)
+        self._miscellanyRepeater = MiscellanyRepeater.instance()
         self.consoleIndexChanged.connect(self.onConsoleIndexChanged)
         self.screenResolutionIndexChanged.connect(self.onScreenResolutionChanged)
 
+        self._miscellanyRepeater.optionArrived.connect(self.onOptionArrived)
+        self._miscellanyRepeater.getOption("console")
+        self._miscellanyRepeater.getOption("video")
+
+    def onOptionArrived(self, name, value):
+        print("option arrived", name, value)
+        if name == "console":
+            self.consoleIndex = self.getConsoleOptionIndex(value)
+        elif name == "video":
+            self.screenResolutionIndex = self.getScreenResolutionIndex(value)
+        else:
+            print("Unhandled option", name, value)
+
+    def getConsoleOptionValue(self, index):
+        return self._consoleOptionValues[index]
+
+    def getConsoleOptionIndex(self, value):
+        if value not in self._consoleOptionValues:
+            return -1
+        return self._consoleOptionValues.index(value)
+
+    def getScreenResolutionValue(self, index):
+        return self._screenResolutionOptionValues[index]
+
+    def getScreenResolutionIndex(self, value):
+        if value not in self._screenResolutionOptionValues:
+            return -1
+        return self._screenResolutionOptionValues.index(value)
+
     @pyqtSlot()
     def onConsoleIndexChanged(self):
-        if self.consoleIndex == 0:
-            MiscellanyRepeater.instance().setBootOption("console", "null")
-        elif self.consoleIndex == 1:
-            MiscellanyRepeater.instance().setBootOption("console", "ttymxc0,115200")
-        elif self.consoleIndex == 2:
-            MiscellanyRepeater.instance().setBootOption("console", "ttyUSB0,115200")
-        else:
-            print("Wrong console option")
+        self._miscellanyRepeater.setOption("console", self.getConsoleOptionValue(self.consoleIndex))
 
     @pyqtSlot()
     def onScreenResolutionChanged(self):
-        if self.screenResolutionIndex == 0:
-            MiscellanyRepeater.instance().setBootOption("video", "null")
-        elif self.screenResolutionIndex == 1:
-            MiscellanyRepeater.instance().setBootOption("video", "ttymxc0,115200")
-        elif self.screenResolutionIndex == 2:
-            MiscellanyRepeater.instance().setBootOption("video", "ttyUSB0,115200")
-        elif self.screenResolutionIndex == 3:
-            MiscellanyRepeater.instance().setBootOption("video", "ttyUSB0,115200")
-        elif self.screenResolutionIndex == 4:
-            MiscellanyRepeater.instance().setBootOption("video", "ttyUSB0,115200")
-        else:
-            print("Wrong console option")
+        self._miscellanyRepeater.setOption("video", self.getScreenResolutionValue(self.screenResolutionIndex))
 
     @pyqtSlot()
     def reboot(self):
