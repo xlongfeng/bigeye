@@ -25,7 +25,7 @@
 from datetime import datetime
 from random import choice
 
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, QObject, QTimer
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, QObject, QTimer, QStringListModel
 
 from fishbone import *
 from orm import *
@@ -35,6 +35,42 @@ from process import *
 from filetransfer import *
 from snapshot import *
 from video import *
+
+
+class FileListModel(QStringListModel):
+    NameRole = Qt.UserRole + 1
+
+    _roles = {NameRole: b"name"}
+
+    def __init__(self, parent=None):
+        super(FileListModel, self).__init__(parent)
+        self._fileList = []
+
+    @pyqtSlot(str)
+    def add(self, name):
+        if name not in self._fileList:
+            self._fileList.append(name)
+            self.setStringList(self._fileList)
+
+    @pyqtSlot(int)
+    def remove(self, index):
+        print(index, type(index))
+        del self._fileList[index]
+        self.setStringList(self._fileList)
+
+    def data(self, index, role=Qt.DisplayRole):
+        try:
+            filename = self._fileList[index.row()]
+        except IndexError:
+            return QVariant()
+
+        if role == self.NameRole:
+            return filename
+
+        return QVariant()
+
+    def roleNames(self):
+        return self._roles
 
 
 class Controller(QObject):
@@ -72,6 +108,18 @@ class Controller(QObject):
     def preview(self, source):
         self._preview = source
         self.previewChanged.emit()
+
+    fileListModelChanged = pyqtSignal()
+    _fileListModel = None
+
+    @pyqtProperty(FileListModel, notify=fileListModelChanged)
+    def fileListModel(self):
+        return self._fileListModel
+
+    @fileListModel.setter
+    def fileListModel(self, source):
+        self._fileListModel = source
+        self.fileListModelChanged.emit()
     
     def __init__(self, parent=None):
         super(Controller, self).__init__(parent)
@@ -88,6 +136,7 @@ class Controller(QObject):
         self._videoRecorder.frameChanged.connect(self.onPreviewChanged)
 
         self.model = KeyEventModel(self)
+        self.fileListModel = FileListModel(self)
 
     @pyqtSlot(str, str)
     def start(self, name, category):

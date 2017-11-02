@@ -72,8 +72,31 @@ Pane {
             }
 
             GroupBox {
-                title: qsTr("Saved File List")
+                label: Label {
+                    text: qsTr("Saved File List")
+                    rightPadding: 32
+                    Button {
+                        id: editButton
+                        anchors {
+                            right: parent.right
+                            verticalCenter: parent.verticalCenter
+                        }
+                        contentItem: Image {
+                            source: "images/add.png"
+                            sourceSize: "16x16"
+                        }
+                        background: Rectangle {
+                            radius: 5
+                            color: editButton.pressed ? "gray" : editButton.hovered ? "	lightgray" : "transparent"
+                        }
+
+                        onClicked: {
+                            fileList.addFile()
+                        }
+                    }
+                }
                 FileListFragment {
+                    id: fileList
                     model: controller.fileListModel
                     anchors.fill: parent
                 }

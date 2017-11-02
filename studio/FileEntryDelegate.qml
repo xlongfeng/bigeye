@@ -22,6 +22,45 @@ import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 
 ItemDelegate {
-    width: ListView.view.width
-    text: name
+    id: container
+
+    height: content.implicitHeight
+    hoverEnabled: true
+
+    signal removed
+
+    contentItem: Item {
+        id: content
+        width: container.width
+        implicitHeight: filename.implicitHeight + 12
+
+        Text {
+            id: filename
+            anchors {
+                left: parent.left
+                verticalCenter: parent.verticalCenter
+            }
+            text: name
+        }
+
+        Button {
+            id: deleteButton
+            anchors {
+                right: parent.right
+                verticalCenter: parent.verticalCenter
+            }
+            contentItem: Image {
+                source: "images/delete.png"
+                sourceSize: "16x16"
+                opacity: container.hovered ? 1.0 : 0
+                Behavior on opacity {
+                    NumberAnimation { duration: 100 }
+                }
+            }
+            background: Item {
+            }
+
+            onClicked: container.removed()
+        }
+    }
 }

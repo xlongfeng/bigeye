@@ -24,6 +24,41 @@ import QtQuick.Layouts 1.3
 import Bigeye 1.0
 
 ListView {
-    delegate: FileEntryDelegate { }
+    id: fileList
+    delegate: FileEntryDelegate {
+        width: fileList.width
+        onRemoved: {
+            fileList.model.remove(index)
+        }
+    }
     ScrollIndicator.vertical: ScrollIndicator { }
+
+    function addFile() {
+        filename.text = ""
+        addFileDialog.open()
+    }
+
+    Dialog {
+        id: addFileDialog
+        width: 320
+        height: 160
+
+        modal: true
+        focus: true
+        title: "Add file"
+
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        onAccepted: {
+            var name = filename.text
+            name = name.trim()
+            if (name !== "") {
+                fileList.model.add(name)
+            }
+        }
+
+        contentItem: TextField {
+            id: filename
+        }
+    }
 }

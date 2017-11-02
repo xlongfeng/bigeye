@@ -20,6 +20,8 @@
 import QtQuick 2.7
 
 ListModel {
+    id: model
+
     ListElement {
        name: "/cfgdir/save0"
     }
@@ -30,5 +32,9 @@ ListModel {
 
     ListElement {
        name: "/cfgdir/save3"
+    }
+
+    function add(name) {
+        model.append({"name": name})
     }
 }

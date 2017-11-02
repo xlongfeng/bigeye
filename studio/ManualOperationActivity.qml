@@ -90,11 +90,12 @@ Pane {
                         }
 
                         onClicked: {
-                            console.log("edit saved file list")
+                            fileList.addFile()
                         }
                     }
                 }
                 FileListFragment {
+                    id: fileList
                     model: controller.fileListModel
                     anchors.fill: parent
                 }
