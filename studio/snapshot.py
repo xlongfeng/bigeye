@@ -24,7 +24,7 @@
 
 from datetime import datetime
 
-from PyQt5.QtCore import Qt, QObject, QMutex, QSize, QTimer
+from PyQt5.QtCore import Qt, QObject, QMutex, QSize, QTimer, QStandardPaths
 from PyQt5.QtGui import QImage
 from PyQt5.QtQuick import QQuickImageProvider
 
@@ -33,8 +33,6 @@ from fishbone import *
 
 
 class Snapshot(RepeaterDelegate):
-    _mutex = QMutex()
-
     _width = 0
     _height = 0
     _bitdepth = 0
@@ -83,18 +81,14 @@ class Snapshot(RepeaterDelegate):
 
     def onExtendedDataArrived(self, category, data):
         if category == 'snapshot':
-            self._mutex.lock()
             self.image = QImage(data, self._width,
                                 self._height, QImage.Format_RGB16)
-            self._mutex.unlock()
             return True
         else:
             return False
 
     def save(self, filename):
-        self._mutex.lock()
         self.image.save(filename)
-        self._mutex.unlock()
 
 
 class SnapshotProvider(QQuickImageProvider):
@@ -161,7 +155,9 @@ class Screenshot(QObject):
 
     @pyqtSlot()
     def save(self):
-        self._snapshot.save("bigeye-screenshot-{}.png".format(datetime.now().strftime("%Y%m%d%H%M%S")))
+        filename = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
+        filename += "/bigeye-screenshot-{}.png".format(datetime.now().strftime("%Y%m%d%H%M%S"))
+        self._snapshot.save(filename)
 
     @pyqtSlot()
     def onImageChanged(self):

@@ -102,7 +102,7 @@ class Controller(QObject):
         self._videoRecorder.setResolution(
             self._fishboneConnector.screenWidth,
             self._fishboneConnector.screenHeight)
-        self._videoRecorder.setFilename(str(self._testCaseId))
+        self._videoRecorder.setFilename("data/videos/" + str(self._testCaseId))
         self._videoRecorder.start()
     
     @pyqtSlot()

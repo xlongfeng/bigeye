@@ -56,7 +56,7 @@ class KeyEvent(Base):
 
 TestCase.key_event_list = relationship("KeyEvent", order_by=KeyEvent.timestamp, back_populates="test_case")
 
-engine = create_engine('sqlite:///storage.sqlite')
+engine = create_engine('sqlite:///data/storage.sqlite')
 Base.metadata.create_all(engine)
 
 session = sessionmaker(engine)()

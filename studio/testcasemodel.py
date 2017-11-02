@@ -22,6 +22,7 @@
 #############################################################################
 
 
+import os
 from datetime import datetime
 from sqlalchemy import desc
 
@@ -61,6 +62,9 @@ class TestCaseModel(QAbstractListModel):
         self.beginRemoveRows(parent, first, last-1)
         for testCase in self._testCases[first:last]:
             session.delete(testCase)
+            video = "data/videos/" + str(testCase.id) + ".avi"
+            if os.path.exists(video):
+                os.remove(video)
         session.commit()
         del self._testCases[first:last]
         self.endRemoveRows()

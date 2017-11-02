@@ -26,7 +26,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from PyQt5.QtCore import Qt, pyqtProperty, pyqtSlot, QTimer, QSize
+from PyQt5.QtCore import Qt, pyqtProperty, pyqtSlot, QTimer, QSize, QStandardPaths
 from PyQt5.QtGui import QImage
 from PyQt5.QtQuick import QQuickImageProvider
 
@@ -182,9 +182,11 @@ class ScreenRecorder(QObject):
 
     @pyqtSlot()
     def start(self):
+        filename = QStandardPaths.writableLocation(QStandardPaths.MoviesLocation)
+        filename += "/bigeye-video-{}".format(datetime.now().strftime("%Y%m%d%H%M%S"))
         self._recorder.setFrameRate(5)
         self._recorder.setResolution(self._width, self._height)
-        self._recorder.setFilename("bigeye-video-{}".format(datetime.now().strftime("%Y%m%d%H%M%S")))
+        self._recorder.setFilename(filename)
         self._recorder.start()
 
     @pyqtSlot()
