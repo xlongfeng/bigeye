@@ -26,6 +26,7 @@
 #include <QMutex>
 #include <QQueue>
 #include <QList>
+#include <QTime>
 #include <QDebug>
 
 #include "fishbone.h"
@@ -59,6 +60,8 @@ public:
     QByteArray dequeueReceiveBytes();
 
     void tramsmitBytes(const QByteArray &bytes);
+
+    bool discardPrecedingData();
 
 signals:
     void dataArrived(const QByteArray &bytes);
@@ -179,6 +182,9 @@ private:
     libusb_context *ctx;
     libusb_device_handle *device;
     libusb_hotplug_callback_handle hotplug;
+
+    QTime discardTime;
+    bool discarding;
 };
 
 #endif // BIGEYELINKER_H

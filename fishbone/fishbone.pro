@@ -23,12 +23,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     bigeye.cpp \
-    bigeyelinker.cpp
+    bigeyelinker.cpp \
+    option.cpp
 
 HEADERS += \
     bigeye.h \
     bigeyelinker.h \
-    fishbone.h
+    fishbone.h \
+    option.h
 
 unix {
     target.path = /usr/lib

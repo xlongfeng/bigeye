@@ -44,9 +44,11 @@ private slots:
     void snapshot(QDataStream &stream);
     void videoFrame(QDataStream &stream);
     void executeProgram(QDataStream &stream);
-    void executeProgramDetached(QDataStream &stream);
+    void executeRemoteProgram(QDataStream &stream);
     void fileTransferPut(QDataStream &stream);
     void fileTransferGet(QDataStream &stream);
+    void setOption(QDataStream &stream);
+    void getOption(QDataStream &stream);
 
 private:
     void sendExtendedData(const QString &category, QByteArray &buffer);
