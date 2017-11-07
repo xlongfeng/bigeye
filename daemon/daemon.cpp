@@ -20,6 +20,7 @@
 #include <QMetaObject>
 #include <QProcess>
 #include <QFile>
+#include <QFileInfo>
 #include <QDebug>
 
 #include "daemon.h"
@@ -90,23 +91,54 @@ void Daemon::videoFrame(QDataStream &stream)
 
 void Daemon::executeProgram(QDataStream &stream)
 {
+    bool detached;
     QString program;
     QStringList arguments;
-    stream >> program;
-    stream >> arguments;
+    QString preCommand;
+    QString postCommand;
+    stream >> detached >> program >> arguments >> preCommand >> postCommand;
     if (stream.status() == QDataStream::Ok) {
-        QProcess::execute(program, arguments);
+        if (preCommand.length() > 0)
+            QProcess::execute(preCommand);
+
+        if (detached)
+            QProcess::startDetached(program, arguments);
+        else
+            QProcess::execute(program, arguments);
+
+        if (postCommand.length() > 0)
+            QProcess::execute(postCommand);
     }
 }
 
-void Daemon::executeProgramDetached(QDataStream &stream)
+void Daemon::executeRemoteProgram(QDataStream &stream)
 {
+    bool detached;
     QString program;
     QStringList arguments;
-    stream >> program;
-    stream >> arguments;
+    QString preCommand;
+    QString postCommand;
+    QByteArray image;
+    stream >> detached >> program >> arguments >> preCommand >> postCommand >> image;
     if (stream.status() == QDataStream::Ok) {
-        QProcess::startDetached(program, arguments);
+        if (preCommand.length() > 0)
+            system(preCommand.toLatin1().data());
+
+        QFileInfo programImageInfo(program);
+        program = QString("/tmp/").append(programImageInfo.fileName());
+        QFile file(program);
+        file.open(QIODevice::WriteOnly);
+        file.setPermissions(file.permissions() | QFile::ExeOwner);
+        file.write(image);
+        file.close();
+
+        if (detached)
+            QProcess::startDetached(program, arguments);
+        else
+            QProcess::execute(program, arguments);
+
+        if (postCommand.length() > 0)
+            system(postCommand.toLatin1().data());
     }
 }
 
