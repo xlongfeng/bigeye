@@ -22,7 +22,8 @@
 QList<BigeyeLinker::USBTransferBlock *> BigeyeLinker::USBTransferBlock::transferBlockFreeList;
 
 BigeyeLinker::BigeyeLinker(QObject *parent) : QThread(parent),
-    interrupt(false)
+    interrupt(false),
+    discarding(true)
 {
     pingReceiveBlock = USBTransferBlock::create(this);
     pongReceiveBlock = USBTransferBlock::create(this);
@@ -68,6 +69,18 @@ void BigeyeLinker::tramsmitBytes(const QByteArray &bytes)
     transmitBlock->submit();
 }
 
+bool BigeyeLinker::discardPrecedingData()
+{
+    if (discarding) {
+         if (discardTime.elapsed() > 1000)
+             discarding = false;
+         else {
+             return true;
+         }
+    }
+    return false;
+}
+
 void BigeyeLinker::run()
 {
     qDebug() << "BigeyeLinker" << "start";
@@ -105,6 +118,9 @@ void BigeyeLinker::startReceive()
     if (libusb_kernel_driver_active(device, 0) == 1)
         libusb_detach_kernel_driver(device, 0);
     libusb_claim_interface(device, 0);
+
+    discarding = true;
+    discardTime.restart();
 
     pingReceiveBlock->fillBulk(device, 129, receiveTransferCallback);
     pingReceiveBlock->submit();
@@ -151,7 +167,8 @@ void BigeyeLinker::receiveTransferCallback(libusb_transfer *transfer)
 
     switch (transfer->status) {
     case LIBUSB_TRANSFER_COMPLETED:
-        self->dataArrived(QByteArray(buffer, transfer->actual_length));
+        if (!self->discardPrecedingData())
+            self->dataArrived(QByteArray(buffer, transfer->actual_length));
         usbTransferBlock->submit();
         break;
     case LIBUSB_TRANSFER_STALL:
@@ -177,6 +194,7 @@ int BigeyeLinker::hotplugCallback(libusb_context *ctx, libusb_device *dev,
     int rc;
 
     if (LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED == event) {
+        msleep(1500);
         rc = libusb_open(dev, &self->device);
         if (LIBUSB_SUCCESS != rc) {
             qDebug() << "libusb_open" << libusb_error_name(rc);
