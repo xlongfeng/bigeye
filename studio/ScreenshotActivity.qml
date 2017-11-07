@@ -86,7 +86,7 @@ Pane {
 
             anchors.horizontalCenter: screen.horizontalCenter
             anchors.bottom: screen.bottom
-            anchors.bottomMargin: (screen.height - screenshot.height) / 2 + 32
+            anchors.bottomMargin: (screen.height - screenshot.scaleHeight) / 2 + 32
 
             background: Item { }
         }

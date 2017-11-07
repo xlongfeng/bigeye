@@ -124,6 +124,17 @@ class Screenshot(QObject):
     def height(self):
         return self._height
 
+    _scaleWidth = 0
+    _scaleHeight = 0
+
+    @pyqtProperty(int)
+    def scaleWidth(self):
+        return self._scaleWidth
+
+    @pyqtProperty(int)
+    def scaleHeight(self):
+        return self._scaleHeight
+
     _image = None
 
     imageChanged = pyqtSignal()
@@ -142,6 +153,15 @@ class Screenshot(QObject):
         self._fishboneConnector = FishboneConnector.instance()
         self._width = self._fishboneConnector.screenWidth
         self._height = self._fishboneConnector.screenHeight
+        if self._width == 1024:
+            self._scaleWidth = self._width * 7 / 8
+            self._scaleHeight = self._height * 7 / 8
+        elif self._width == 1280:
+            self._scaleWidth = self._width * 3 / 4
+            self._scaleHeight = self._height  * 3 / 4
+        else:
+            self._scaleWidth = self._width
+            self._scaleHeight = self._height
         self._snapshot = Snapshot.instance()
         self._snapshot.setResolution(self._width, self._height)
         self._snapshot.imageChanged.connect(self.onImageChanged)

@@ -129,6 +129,15 @@ class Controller(QObject):
         self._fishboneConnector = FishboneConnector.instance()
         self._screenWidth = self._fishboneConnector.screenWidth
         self._screenHeight = self._fishboneConnector.screenHeight
+        if self._screenWidth == 1024:
+            self._screenWidth = self._screenWidth * 7 / 8
+            self._screenHeight = self._screenHeight * 7 / 8
+        elif self._screenWidth == 1280:
+            self._screenWidth = self._screenWidth * 3 / 4
+            self._screenHeight = self._screenHeight  * 3 / 4
+        else:
+            self._screenWidth = self._screenWidth
+            self._screenHeight = self._screenHeight
 
         self._keyEvent = KeyEvent.instance()
 
@@ -147,7 +156,7 @@ class Controller(QObject):
         self._startTime = datetime.now()
         self._model.clear()
 
-        self._videoRecorder.setFrameRate(5)
+        self._videoRecorder.setFrameRate(2)
         self._videoRecorder.setResolution(
             self._fishboneConnector.screenWidth,
             self._fishboneConnector.screenHeight)
@@ -387,6 +396,7 @@ class ReplayController(Controller):
                     print("restore request")
                 if self.rebootOption:
                     print("reboot request")
+                    Process.instance().execute('reboot')
                 self._intervalTimer.start(self.intervalTime * 1000)
             else:
                 print("replay is done")

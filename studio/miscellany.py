@@ -146,7 +146,8 @@ class Miscellany(QObject):
 
     @pyqtSlot()
     def unitTest(self):
-        Process.instance().executeRemote("apps/unittest", detached=True, preCommand="killall unittest")
+        Process.instance().executeRemote("apps/unittest", detached=True,
+                                         preCommand="killall startapp; killall polar_app; sleep 3; killall unittest")
 
     @pyqtSlot()
     def reboot(self):

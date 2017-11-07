@@ -22,6 +22,8 @@ import QtQuick 2.7
 Item {
     width: 800
     height: 600
+    property int scaleWidth: 800
+    property int scaleHeight: 600
     property string image: "images/screenshot.png"
 
     function save() {

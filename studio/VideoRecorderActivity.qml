@@ -47,9 +47,9 @@ Pane {
             opacity: 0.5
             font.pixelSize: 32
             anchors.top: screen.top
-            anchors.topMargin: (screen.height - recorder.height) / 2 + 32
+            anchors.topMargin: (screen.height - recorder.scaleHeight) / 2 + 32
             anchors.right: screen.right
-            anchors.rightMargin: (screen.width - recorder.width) / 2 + 32
+            anchors.rightMargin: (screen.width - recorder.scaleWidth) / 2 + 32
 
             Timer {
                 id: timer
@@ -99,7 +99,7 @@ Pane {
 
             anchors.horizontalCenter: screen.horizontalCenter
             anchors.bottom: screen.bottom
-            anchors.bottomMargin: (screen.height - recorder.height) / 2 + 32
+            anchors.bottomMargin: (screen.height - recorder.scaleHeight) / 2 + 32
 
             background: Item { }
         }
