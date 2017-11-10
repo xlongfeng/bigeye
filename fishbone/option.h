@@ -68,7 +68,7 @@ public:
     int setenv(char *varname, char *varvalue = NULL);
     int delenv(char *varname)
     {
-        setenv(varname, NULL);
+        return setenv(varname, NULL);
     }
 
     char *getenv(char *name);
