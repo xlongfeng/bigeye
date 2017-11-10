@@ -37,6 +37,55 @@ from snapshot import *
 from video import *
 
 
+class CpuModel(QAbstractListModel):
+    ProcessorRole = Qt.UserRole + 1
+    IdleRole = Qt.UserRole + 2
+
+    _roles = {ProcessorRole: b"processor", IdleRole: b"idle"}
+
+    def __init__(self, parent=None):
+        super(CpuModel, self).__init__(parent)
+        self._cpus = [
+            {"processor": 0, "idle": 100},
+            {"processor": 1, "idle": 100}
+        ]
+
+    def setCpuUsage(self, processor, idle):
+        self.setData(self.index(processor), idle, self.IdleRole)
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self._cpus)
+
+    def data(self, index, role=Qt.DisplayRole):
+        try:
+            cpu = self._cpus[index.row()]
+        except IndexError:
+            return QVariant()
+
+        if role == self.ProcessorRole:
+            return cpu["processor"]
+        if role == self.IdleRole:
+            return cpu["idle"]
+
+        return QVariant()
+
+    def setData(self, index, value, role=Qt.EditRole):
+        try:
+            cpu = self._cpus[index.row()]
+        except IndexError:
+            return QVariant()
+
+        if role == self.IdleRole:
+            cpu["idle"] = value
+            self.dataChanged.emit(index, index)
+            return True
+
+        return False
+
+    def roleNames(self):
+        return self._roles
+
+
 class FileListModel(QStringListModel):
     NameRole = Qt.UserRole + 1
 
@@ -74,6 +123,40 @@ class FileListModel(QStringListModel):
 
 
 class Controller(QObject):
+    cpuModelChanged = pyqtSignal()
+    _cpuModel = None
+
+    @pyqtProperty(FileListModel, notify=cpuModelChanged)
+    def cpuModel(self):
+        return self._cpuModel
+
+    @cpuModel.setter
+    def cpuModel(self, model):
+        self._cpuModel = model
+        self.cpuModelChanged.emit()
+        
+    memInfoChanged = pyqtSignal()
+
+    _memTotal = 0
+
+    @pyqtProperty(int)
+    def memTotal(self):
+        return self._memTotal
+
+    @memTotal.setter
+    def memTotal(self, value):
+        self._memTotal = value
+
+    _memFree = 0
+
+    @pyqtProperty(int)
+    def memFree(self):
+        return self._memFree
+
+    @memFree.setter
+    def memFree(self, value):
+        self._memFree = value
+    
     modelChanged = pyqtSignal()
     _model = None
 
@@ -139,6 +222,8 @@ class Controller(QObject):
             self._screenWidth = self._screenWidth
             self._screenHeight = self._screenHeight
 
+        self.cpuModel = CpuModel(self)
+
         self._keyEvent = KeyEvent.instance()
 
         self._videoRecorder = VideoRecorder.instance()
@@ -152,6 +237,17 @@ class Controller(QObject):
         testcase = TestCase(name=name, category=category, timestamp=datetime.now())
         session.add(testcase)
         session.commit()
+
+        self._cpuStat = CpuStat.instance()
+        self._cpuStat.cpuStatChanged.connect(self.onCpuStatChanged)
+
+        self._memInfo = MemInfo.instance()
+        self._memInfo.memInfoChanged.connect(self.onMemInfoChanged)
+
+        self._systemInfoUpdateTimer = QTimer(self)
+        self._systemInfoUpdateTimer.timeout.connect(self.onSysInfoUpdate)
+        self._systemInfoUpdateTimer.start(1000)
+
         self._testCaseId = testcase.id
         self._startTime = datetime.now()
         self._model.clear()
@@ -165,7 +261,26 @@ class Controller(QObject):
     
     @pyqtSlot()
     def stop(self):
+        self._systemInfoUpdateTimer.stop()
         self._videoRecorder.stop()
+
+    @pyqtSlot()
+    def onSysInfoUpdate(self):
+        self._cpuStat.fetch()
+        self._memInfo.fetch()
+
+    @pyqtSlot()
+    def onCpuStatChanged(self):
+        index = 0
+        for stat in self._cpuStat.stats:
+            self.cpuModel.setCpuUsage(index, stat[3])
+            index += 1
+
+    @pyqtSlot()
+    def onMemInfoChanged(self):
+        self.memTotal = self._memInfo.mtotal
+        self.memFree = self._memInfo.mfree
+        self.memInfoChanged.emit()
 
     @pyqtSlot(str, int, bool)
     def report(self, name, code, down):

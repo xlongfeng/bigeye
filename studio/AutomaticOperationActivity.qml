@@ -55,7 +55,7 @@ Pane {
         ColumnLayout {
             GroupBox {
                 title: qsTr("CPU Usage")
-                CpuInfoFragment {
+                CpuUsageFragment {
                     anchors.fill: parent
                 }
                 Layout.fillWidth: true

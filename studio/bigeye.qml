@@ -215,9 +215,10 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        addLauncher("Test Case", "Manage and replay test cases", Qt.resolvedUrl("images/testcase.png"), Qt.resolvedUrl("TestCaseActivity.qml"));
+        addLauncher("Supervisor", "Watch testing process and machine running state", Qt.resolvedUrl("images/supervisor.png"),  Qt.resolvedUrl("SupervisorActivity.qml"));
         addLauncher("Manual Operation", "Manual manipulation and record test procedure", Qt.resolvedUrl("images/man.png"),  Qt.resolvedUrl("ManualOperationActivity.qml"));
         addLauncher("Automatic Operation", "Random manipulation and record test procedure", Qt.resolvedUrl("images/robot.png"), Qt.resolvedUrl("AutomaticOperationActivity.qml"));
+        addLauncher("Test Case", "Manage and replay test cases", Qt.resolvedUrl("images/testcase.png"), Qt.resolvedUrl("TestCaseActivity.qml"));
         addLauncher("Video Recoder", "Screen record for all-purpose", Qt.resolvedUrl("images/video.png"), Qt.resolvedUrl("VideoRecorderActivity.qml"));
         addLauncher("Screenshot", "Screen capture for all-purpose", Qt.resolvedUrl("images/camera.png"), Qt.resolvedUrl("ScreenshotActivity.qml"));
         addLauncher("System Monitor", "Supervise system status", Qt.resolvedUrl("images/system.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));

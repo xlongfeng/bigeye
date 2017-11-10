@@ -29,38 +29,15 @@ ListView {
 
     orientation: ListView.Horizontal
 
-    model: ListModel {
-        ListElement {
-            cpu: 0
-            cpuUsage: 60
-        }
-
-        ListElement {
-            cpu: 1
-            cpuUsage: 30
-        }
-
-        ListElement {
-            cpu: 2
-            cpuUsage: 10
-        }
-
-        ListElement {
-            cpu: 3
-            cpuUsage: 100
-        }
-    }
-
     delegate: ColumnLayout {
-        width: cpuInfo.width / 4
+        width: identify.width + 8
         height: cpuInfo.height
         Text {
-            id: usage
-            text: cpuUsage
+            text: 100 - idle
         }
 
         Rectangle {
-            width: 30
+            width: identify.width
             gradient: Gradient {
                 GradientStop { position: 0.0; color: "red" }
                 GradientStop { position: 0.5; color: "yellow" }
@@ -70,7 +47,7 @@ ListView {
             Rectangle {
                 color: "white"
                 width: parent.width
-                height: parent.height * (100 - cpuUsage) / 100
+                height: parent.height * idle / 100
                 anchors.top: parent.top
             }
 
@@ -79,7 +56,7 @@ ListView {
 
         Text {
             id: identify
-            text: 'CPU' + cpu
+            text: 'CPU' + processor
         }
     }
 }

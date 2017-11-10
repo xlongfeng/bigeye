@@ -183,3 +183,53 @@ class Fishbone(QObject):
             KeyEvent.instance().open()
         else:
             KeyEvent.instance().close()
+
+class CpuStat(RepeaterDelegate):
+    cpuStatChanged = pyqtSignal()
+
+    cpus = 0
+    stats = []
+
+    def __init__(self, parent=None):
+        super(CpuStat, self).__init__(parent)
+
+    def fetch(self):
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('getCpuStat')
+        self._repeater.submitRequestBlock(block)
+
+    def respGetCpuStat(self, istream):
+        self.cpus = istream.readUInt32()
+        self.stats.clear()
+        for i in range(0, self.cpus):
+            usr = istream.readUInt32()
+            sys = istream.readUInt32()
+            nic = istream.readUInt32()
+            idle = istream.readUInt32()
+            iowait = istream.readUInt32()
+            irq = istream.readUInt32()
+            softirq = istream.readUInt32()
+            self.stats.append([usr, sys, nic, idle, iowait, irq, softirq])
+        self.cpuStatChanged.emit()
+
+class MemInfo(RepeaterDelegate):
+    memInfoChanged = pyqtSignal()
+    mtotal = 0
+    mfree = 0
+    buffers = 0
+    cached = 0
+
+    def __init__(self, parent=None):
+        super(MemInfo, self).__init__(parent)
+
+    def fetch(self):
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('getMemInfo')
+        self._repeater.submitRequestBlock(block)
+
+    def respGetMemInfo(self, istream):
+        self.mtotal = istream.readUInt32()
+        self.mfree = istream.readUInt32()
+        self.buffers = istream.readUInt32()
+        self.cached = istream.readUInt32()
+        self.memInfoChanged.emit()

@@ -23,6 +23,18 @@ import Bigeye 1.0
 Item {
     id: controller
 
+    property ListModel cpuModel: ListModel {
+        ListElement {
+            processor: 0
+            idle: 25
+        }
+
+        ListElement {
+            processor: 1
+            idle: 75
+        }
+    }
+
     property FileListModel fileListModel: FileListModel { }
 
     property KeyEventModel model: KeyEventModel { }
@@ -34,13 +46,31 @@ Item {
 
     property string preview: "images/screenshot.png"
 
+    signal memInfoChanged
+    property int memTotal: 102400
+    property int memFree: 100000
+
+    Timer {
+        id: memConsumeMockTimer
+        interval: 1000
+        repeat: true
+        onTriggered: {
+            memFree -= 8196
+            if (memFree <= 0) {
+                memFree = 100000
+            }
+            memInfoChanged()
+        }
+    }
+
     function start(name, category) {
         console.log("Start Test Case:%1 %2".arg(name).arg(category))
         model.clear()
+        memConsumeMockTimer.start()
     }
 
     function stop() {
-
+        memConsumeMockTimer.stop()
     }
 
     function report(name, code, down) {

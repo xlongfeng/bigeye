@@ -24,7 +24,7 @@ import QtQuick.Layouts 1.3
 import Bigeye 1.0
 
 Pane {
-    id: manualOperation
+    id: activity
 
     state: "stopped"
 
@@ -44,7 +44,7 @@ Pane {
         }
 
         MonitorPanel {
-            state: manualOperation.state
+            state: activity.state
             controller: controller
 
             Layout.row: 1
@@ -52,13 +52,28 @@ Pane {
         }
 
         ColumnLayout {
-            GroupBox {
-                title: qsTr("CPU Usage")
-                CpuUsageFragment {
-                    anchors.fill: parent
+            RowLayout {
+                GroupBox {
+                    title: qsTr("CPU")
+                    CpuStatFragment {
+                        anchors.fill: parent
+                        model: controller.cpuModel
+                    }
+                    Layout.preferredWidth: 96
+                    Layout.fillHeight: true
+                }
+                GroupBox {
+                    title: qsTr("Memory")
+                    MemoryInfoFragment {
+                        controller: controller
+                        anchors.fill: parent
+                    }
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
                 }
                 Layout.fillWidth: true
                 Layout.minimumHeight: 160
+                Layout.maximumHeight: 160
             }
 
             GroupBox {
@@ -71,39 +86,6 @@ Pane {
             }
 
             GroupBox {
-                label: Label {
-                    text: qsTr("Saved File List")
-                    rightPadding: 32
-                    Button {
-                        id: editButton
-                        anchors {
-                            right: parent.right
-                            verticalCenter: parent.verticalCenter
-                        }
-                        contentItem: Image {
-                            source: "images/add.png"
-                            sourceSize: "16x16"
-                        }
-                        background: Rectangle {
-                            radius: 5
-                            color: editButton.pressed ? "gray" : editButton.hovered ? "	lightgray" : "transparent"
-                        }
-
-                        onClicked: {
-                            fileList.addFile()
-                        }
-                    }
-                }
-                FileListFragment {
-                    id: fileList
-                    model: controller.fileListModel
-                    anchors.fill: parent
-                }
-                Layout.fillWidth: true
-                Layout.minimumHeight: 160
-            }
-
-            GroupBox {
                 title: qsTr("Keystroke Logger")
                 KeyLoggerView {
                     model: controller.model
@@ -113,21 +95,14 @@ Pane {
                 Layout.fillHeight: true
             }
 
-            TextField {
-                id: testCase
-                selectByMouse: true
-                text: qsTr("Manual Operation")
-                Layout.fillWidth: true
-            }
-
             Button {
                 id: recordButton
                 onPressed: {
-                    if (manualOperation.state === "stopped") {
-                        manualOperation.state = "started"
-                        controller.start(testCase.text, "manual")
+                    if (activity.state === "stopped") {
+                        activity.state = "started"
+                        controller.start("Supervisor", "supervisor")
                     } else {
-                        manualOperation.state = "stopped"
+                        activity.state = "stopped"
                         controller.stop()
                     }
                 }
@@ -144,12 +119,10 @@ Pane {
     states: [
         State {
             name: "started"
-            PropertyChanges { target: testCase; enabled: false }
             PropertyChanges { target: recordButton; text: qsTr("Stop") }
         },
         State {
             name: "stopped"
-            PropertyChanges { target: testCase; enabled: true }
             PropertyChanges { target: recordButton; text: qsTr("Start") }
         }
     ]
