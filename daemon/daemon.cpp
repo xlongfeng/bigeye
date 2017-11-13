@@ -17,6 +17,8 @@
  *
  */
 
+#include <sys/vfs.h>
+
 #include <QMetaObject>
 #include <QProcess>
 #include <QFile>
@@ -223,6 +225,31 @@ void Daemon::getMemInfo(QDataStream &stream)
     istream << QString("Bigeye");
     istream << QString("respGetMemInfo");
     istream << (quint32)mtotal << (quint32)mfree << (quint32)buffers << (quint32)cached;
+
+    linker->tramsmitBytes(escape(block));
+}
+
+void Daemon::getDiskVolume(QDataStream &stream)
+{
+    Q_UNUSED(stream)
+
+    struct statfs s;
+    if (statfs("/", &s) != 0) {
+        qDebug() << "Mount point / statfs failed";
+        return;
+    }
+    // qDebug() << s.f_blocks << s.f_bfree << s.f_bavail << s.f_bsize;
+
+    unsigned long mtotal, mfree;
+    mtotal = s.f_blocks * s.f_bsize / 1024;
+    mfree = s.f_bfree * s.f_bsize / 1024;
+
+    QByteArray block;
+    QDataStream istream(&block, QIODevice::WriteOnly);
+    istream.setVersion(QDataStream::Qt_4_8);
+    istream << QString("Bigeye");
+    istream << QString("respGetDiskVolume");
+    istream << (quint32)mtotal << (quint32)mfree;
 
     linker->tramsmitBytes(escape(block));
 }

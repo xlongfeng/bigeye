@@ -55,6 +55,7 @@ private slots:
     void executeRemoteProgram(QDataStream &stream);
     void getCpuStat(QDataStream &stream);
     void getMemInfo(QDataStream &stream);
+    void getDiskVolume(QDataStream &stream);
     void fileTransferPut(QDataStream &stream);
     void fileTransferGet(QDataStream &stream);
     void setOption(QDataStream &stream);
