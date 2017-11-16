@@ -39,15 +39,16 @@ from video import *
 
 class CpuModel(QAbstractListModel):
     ProcessorRole = Qt.UserRole + 1
-    IdleRole = Qt.UserRole + 2
+    NameRole = Qt.UserRole + 2
+    IdleRole = Qt.UserRole + 3
 
-    _roles = {ProcessorRole: b"processor", IdleRole: b"idle"}
+    _roles = {ProcessorRole: b"processor", NameRole: b"name", IdleRole: b"idle"}
 
     def __init__(self, parent=None):
         super(CpuModel, self).__init__(parent)
         self._cpus = [
-            {"processor": 0, "idle": 100},
-            {"processor": 1, "idle": 100}
+            {"processor": 0, "name": "CPU0", "idle": 100},
+            {"processor": 1, "name": "CPU1", "idle": 100}
         ]
 
     def setCpuUsage(self, processor, idle):
@@ -64,6 +65,8 @@ class CpuModel(QAbstractListModel):
 
         if role == self.ProcessorRole:
             return cpu["processor"]
+        if role == self.NameRole:
+            return cpu["name"]
         if role == self.IdleRole:
             return cpu["idle"]
 
@@ -81,6 +84,52 @@ class CpuModel(QAbstractListModel):
             return True
 
         return False
+
+    def roleNames(self):
+        return self._roles
+
+
+class SystemInfoHistoryModel(QAbstractListModel):
+    NameRole = Qt.UserRole + 1
+    ColorRole = Qt.UserRole + 2
+
+    _roles = {NameRole: b"name", ColorRole: b"color"}
+
+    @pyqtProperty(int)
+    def count(self):
+        return self.rowCount()
+
+    def __init__(self, parent=None):
+        super(SystemInfoHistoryModel, self).__init__(parent)
+        self._infoHistory = [
+            {"name": "CPU0", "color": "red", "data": []},
+            {"name": "CPU1", "color": "yellow", "data": []},
+            {"name": "MEMORY", "color": "magenta", "data": []},
+            {"name": "DISK", "color": "lime", "data": []}
+        ]
+
+    @pyqtSlot(int)
+    def getData(self, index):
+        self._infoHistory[index]["data"]
+
+    def rowCount(self, parent=QModelIndex()):
+        print("bbbbb")
+        return len(self._infoHistory)
+
+    def data(self, index, role=Qt.DisplayRole):
+        try:
+            cpu = self._cpus[index.row()]
+        except IndexError:
+            return QVariant()
+
+        if role == self.ProcessorRole:
+            return cpu["processor"]
+        if role == self.NameRole:
+            return cpu["name"]
+        if role == self.IdleRole:
+            return cpu["idle"]
+
+        return QVariant()
 
     def roleNames(self):
         return self._roles
@@ -156,6 +205,40 @@ class Controller(QObject):
     @memFree.setter
     def memFree(self, value):
         self._memFree = value
+
+    diskVolumeChanged = pyqtSignal()
+
+    _diskVolumeTotal = 0
+
+    @pyqtProperty(int)
+    def diskVolumeTotal(self):
+        return self._diskVolumeTotal
+
+    @diskVolumeTotal.setter
+    def diskVolumeTotal(self, value):
+        self._diskVolumeTotal = value
+
+    _diskVolumeFree = 0
+
+    @pyqtProperty(int)
+    def diskVolumeFree(self):
+        return self._diskVolumeFree
+
+    @diskVolumeFree.setter
+    def diskVolumeFree(self, value):
+        self._diskVolumeFree = value
+
+    systemInfoHistoryModelChanged = pyqtSignal()
+    _systemInfoHistoryModel = None
+
+    @pyqtProperty(SystemInfoHistoryModel, notify=systemInfoHistoryModelChanged)
+    def systemInfoHistoryModel(self):
+        return self._systemInfoHistoryModel
+
+    @systemInfoHistoryModel.setter
+    def systemInfoHistoryModel(self, systemInfoHistoryModel):
+        self._systemInfoHistoryModel = systemInfoHistoryModel
+        self.systemInfoHistoryModelChanged.emit()
     
     modelChanged = pyqtSignal()
     _model = None
@@ -223,6 +306,7 @@ class Controller(QObject):
             self._screenHeight = self._screenHeight
 
         self.cpuModel = CpuModel(self)
+        self.systemInfoHistoryModel = SystemInfoHistoryModel(self)
 
         self._keyEvent = KeyEvent.instance()
 
@@ -244,6 +328,9 @@ class Controller(QObject):
         self._memInfo = MemInfo.instance()
         self._memInfo.memInfoChanged.connect(self.onMemInfoChanged)
 
+        self._diskVolume = DiskVolume.instance()
+        self._diskVolume.volumeChanged.connect(self.onDiskVolumnChanged)
+
         self._systemInfoUpdateTimer = QTimer(self)
         self._systemInfoUpdateTimer.timeout.connect(self.onSysInfoUpdate)
         self._systemInfoUpdateTimer.start(1000)
@@ -263,14 +350,18 @@ class Controller(QObject):
     def stop(self):
         self._systemInfoUpdateTimer.stop()
         self._videoRecorder.stop()
+        self._testCaseId = None
 
     @pyqtSlot()
     def onSysInfoUpdate(self):
-        self._cpuStat.fetch()
-        self._memInfo.fetch()
+        self._cpuStat.query()
+        self._memInfo.query()
+        self._diskVolume.query()
 
     @pyqtSlot()
     def onCpuStatChanged(self):
+        if self._testCaseId is None:
+            return
         index = 0
         for stat in self._cpuStat.stats:
             self.cpuModel.setCpuUsage(index, stat[3])
@@ -278,12 +369,24 @@ class Controller(QObject):
 
     @pyqtSlot()
     def onMemInfoChanged(self):
+        if self._testCaseId is None:
+            return
         self.memTotal = self._memInfo.mtotal
         self.memFree = self._memInfo.mfree
         self.memInfoChanged.emit()
 
+    @pyqtSlot()
+    def onDiskVolumnChanged(self):
+        if self._testCaseId is None:
+            return
+        self.diskVolumeTotal = self._diskVolume.mtotal
+        self.diskVolumeFree = self._diskVolume.mfree
+        self.diskVolumeChanged.emit()
+
     @pyqtSlot(str, int, bool)
     def report(self, name, code, down):
+        if self._testCaseId is None:
+            return
         delta = datetime.now() - self._startTime
         timestamp = delta.days * 24 * 60 * 60 * 1000
         timestamp += delta.seconds * 1000

@@ -43,7 +43,7 @@ Pane {
             Layout.column: 0
         }
 
-        MonitorPanel {
+        SupervisorPanelFragment {
             state: activity.state
             controller: controller
 
@@ -59,7 +59,8 @@ Pane {
                         anchors.fill: parent
                         model: controller.cpuModel
                     }
-                    Layout.preferredWidth: 96
+                    Layout.fillWidth: true
+
                     Layout.fillHeight: true
                 }
                 GroupBox {
@@ -68,7 +69,16 @@ Pane {
                         controller: controller
                         anchors.fill: parent
                     }
-                    Layout.fillWidth: true
+                    Layout.preferredWidth: 144
+                    Layout.fillHeight: true
+                }
+                GroupBox {
+                    title: qsTr("Disk")
+                    DiskVolumeFragment {
+                        controller: controller
+                        anchors.fill: parent
+                    }
+                    Layout.preferredWidth: 144
                     Layout.fillHeight: true
                 }
                 Layout.fillWidth: true

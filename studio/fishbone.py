@@ -193,7 +193,7 @@ class CpuStat(RepeaterDelegate):
     def __init__(self, parent=None):
         super(CpuStat, self).__init__(parent)
 
-    def fetch(self):
+    def query(self):
         block, ostream = self._repeater.getRequestBlock()
         ostream.writeQString('getCpuStat')
         self._repeater.submitRequestBlock(block)
@@ -222,7 +222,7 @@ class MemInfo(RepeaterDelegate):
     def __init__(self, parent=None):
         super(MemInfo, self).__init__(parent)
 
-    def fetch(self):
+    def query(self):
         block, ostream = self._repeater.getRequestBlock()
         ostream.writeQString('getMemInfo')
         self._repeater.submitRequestBlock(block)
@@ -233,3 +233,21 @@ class MemInfo(RepeaterDelegate):
         self.buffers = istream.readUInt32()
         self.cached = istream.readUInt32()
         self.memInfoChanged.emit()
+
+class DiskVolume(RepeaterDelegate):
+    volumeChanged = pyqtSignal()
+    mtotal = 0
+    mfree = 0
+
+    def __init__(self, parent=None):
+        super(DiskVolume, self).__init__(parent)
+
+    def query(self):
+        block, ostream = self._repeater.getRequestBlock()
+        ostream.writeQString('getDiskVolume')
+        self._repeater.submitRequestBlock(block)
+
+    def respGetDiskVolume(self, istream):
+        self.mtotal = istream.readUInt32()
+        self.mfree = istream.readUInt32()
+        self.volumeChanged.emit()

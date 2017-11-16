@@ -56,7 +56,7 @@ ListView {
 
         Text {
             id: identify
-            text: 'CPU' + processor
+            text: name
         }
     }
 }

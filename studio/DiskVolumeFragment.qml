@@ -28,9 +28,9 @@ Item {
 
     Connections {
         target: controller
-        onMemInfoChanged: {
-            var mTotal = controller.memTotal
-            var mFree = controller.memFree
+        onDiskVolumeChanged: {
+            var mTotal = controller.diskVolumeTotal
+            var mFree = controller.diskVolumeFree
             var mUsed = mTotal - mFree
 
             var precent = (mUsed * 100 / mTotal).toFixed(1)
@@ -58,7 +58,7 @@ Item {
         width: height
         height: parent.height * 2 / 3
         anchors.centerIn: parent
-        color: "magenta"
+        color: "lime"
     }
 
     Text {
