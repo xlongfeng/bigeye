@@ -41,6 +41,8 @@ ItemDelegate {
                     return "images/robot.png"
                 case "manual":
                     return "images/man.png"
+                case "supervisor":
+                    return "images/supervisor.png"
                 case "replay":
                     return "images/replay.png"
                 }

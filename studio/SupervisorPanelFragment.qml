@@ -21,31 +21,56 @@ import QtQuick 2.7
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 
-Rectangle {
+ListView {
+    id: panel
     width: 980
     height: 116
+    spacing: 8
+    orientation: ListView.Horizontal
 
-    property var controller
+    delegate: Frame {
+        width: panel.width / panel.count - panel.spacing
+        height: panel.height - 4
+        Canvas {
+            anchors.fill: parent
+            Text {
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                }
+                text: name
+            }
 
-    Canvas {
-        anchors.fill: parent
-        onPaint: {
-            var ctx = getContext('2d');
-            ctx.clearRect(0, 0, width, height);
-            var systemInfoHistory = controller.systemInfoHistoryModel
-            for (var index = 0; index < systemInfoHistory.count; index++) {
-                var info = systemInfoHistory.get(index)
-                var data = systemInfoHistory.getData(index)
+            property var paint: values
+            onPaintChanged: requestPaint()
+
+            onPaint: {
+                var ctx = getContext('2d');
+                var ypos = values
+                if (typeof ypos == "string") {
+                    ypos = ypos.split(",")
+                    for (var i in ypos)
+                        ypos[i] = parseInt(ypos[i])
+                }
+                ctx.clearRect(0, 0, width, height);
                 ctx.save()
-                ctx.strokeStyle = info.color
+                ctx.strokeStyle = color
                 ctx.beginPath()
-                ctx.setTransform(width / (data.length - 1), 0, 0, height / 100, 0, 0)
+                ctx.setTransform(width / ((ypos.length - 1) * 2), 0, 0, height / 100, 0, 0)
                 var xpos = 0
-                ctx.moveTo(xpos,data[0]);
+                ctx.moveTo(xpos, ypos[0]);
                 xpos += 1
-                for (var i = 1; i < data.length; i += 3) {
-                    ctx.bezierCurveTo(xpos,data[i+0],xpos+1,data[i+1],xpos+2,data[i+2])
-                    xpos += 3
+                for (var i = 1; i < ypos.length; i += 1) {
+                    var y2 = ypos[i]
+                    var y1 = ypos[i-1]
+                    var y0 = ypos[i-0]
+                    if (isNaN(y1))
+                        y1 = y
+                    if (isNaN(y0))
+                        y0 = y
+                    y1 = ((y2 - y0) / 2 + y2) * 1 / 3 + y1 * 2 / 3
+                    ctx.bezierCurveTo(xpos,y1,xpos,y1,xpos+1,y2)
+                    xpos += 2
                 }
                 ctx.setTransform(1, 0, 0, 1, 0, 0)
                 ctx.stroke()

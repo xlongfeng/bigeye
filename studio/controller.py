@@ -92,44 +92,64 @@ class CpuModel(QAbstractListModel):
 class SystemInfoHistoryModel(QAbstractListModel):
     NameRole = Qt.UserRole + 1
     ColorRole = Qt.UserRole + 2
+    ValueRole = Qt.UserRole + 3
 
-    _roles = {NameRole: b"name", ColorRole: b"color"}
-
-    @pyqtProperty(int)
-    def count(self):
-        return self.rowCount()
+    _roles = {NameRole: b"name", ColorRole: b"color", ValueRole: b"values"}
 
     def __init__(self, parent=None):
         super(SystemInfoHistoryModel, self).__init__(parent)
         self._infoHistory = [
-            {"name": "CPU0", "color": "red", "data": []},
-            {"name": "CPU1", "color": "yellow", "data": []},
-            {"name": "MEMORY", "color": "magenta", "data": []},
-            {"name": "DISK", "color": "lime", "data": []}
+            {"name": "CPU0", "color": "red", "values": [100 for i in range(61)]},
+            {"name": "CPU1", "color": "blue", "values": [100 for i in range(61)]},
+            {"name": "MEMORY", "color": "magenta", "values": [100 for i in range(61)]},
+            {"name": "DISK", "color": "lime", "values": [100 for i in range(61)]}
         ]
 
+    @pyqtSlot(int, int)
+    def setCpuUsage(self, processor, idle):
+        if processor > 2:
+            return
+        self.setData(self.index(processor), idle, self.ValueRole)
+
     @pyqtSlot(int)
-    def getData(self, index):
-        self._infoHistory[index]["data"]
+    def setMemoryUsage(self, free):
+        self.setData(self.index(2), free, self.ValueRole)
+
+    @pyqtSlot(int)
+    def setDiskUsage(self, free):
+        self.setData(self.index(3), free, self.ValueRole)
 
     def rowCount(self, parent=QModelIndex()):
-        print("bbbbb")
         return len(self._infoHistory)
 
     def data(self, index, role=Qt.DisplayRole):
         try:
-            cpu = self._cpus[index.row()]
+            info = self._infoHistory[index.row()]
         except IndexError:
             return QVariant()
 
-        if role == self.ProcessorRole:
-            return cpu["processor"]
         if role == self.NameRole:
-            return cpu["name"]
-        if role == self.IdleRole:
-            return cpu["idle"]
+            return info["name"]
+        if role == self.ColorRole:
+            return info["color"]
+        if role == self.ValueRole:
+            return info["values"]
 
         return QVariant()
+
+    def setData(self, index, value, role=Qt.EditRole):
+        try:
+            info = self._infoHistory[index.row()]
+        except IndexError:
+            return QVariant()
+
+        if role == self.ValueRole:
+            info["values"].pop(0)
+            info["values"].append(value)
+            self.dataChanged.emit(index, index)
+            return True
+
+        return False
 
     def roleNames(self):
         return self._roles
@@ -365,6 +385,7 @@ class Controller(QObject):
         index = 0
         for stat in self._cpuStat.stats:
             self.cpuModel.setCpuUsage(index, stat[3])
+            self._systemInfoHistoryModel.setCpuUsage(index, stat[3])
             index += 1
 
     @pyqtSlot()
@@ -373,6 +394,7 @@ class Controller(QObject):
             return
         self.memTotal = self._memInfo.mtotal
         self.memFree = self._memInfo.mfree
+        self._systemInfoHistoryModel.setMemoryUsage(self._memInfo.mfree * 100 / self._memInfo.mtotal)
         self.memInfoChanged.emit()
 
     @pyqtSlot()
@@ -381,6 +403,7 @@ class Controller(QObject):
             return
         self.diskVolumeTotal = self._diskVolume.mtotal
         self.diskVolumeFree = self._diskVolume.mfree
+        self._systemInfoHistoryModel.setDiskUsage(self._diskVolume.mfree * 100 / self._diskVolume.mtotal)
         self.diskVolumeChanged.emit()
 
     @pyqtSlot(str, int, bool)

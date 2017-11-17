@@ -44,8 +44,8 @@ Pane {
         }
 
         SupervisorPanelFragment {
+            model: controller.systemInfoHistoryModel
             state: activity.state
-            controller: controller
 
             Layout.row: 1
             Layout.column: 0
