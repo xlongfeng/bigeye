@@ -26,7 +26,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from PyQt5.QtCore import Qt, pyqtProperty, pyqtSlot, QTimer, QSize
+from PyQt5.QtCore import Qt, pyqtProperty, pyqtSlot, QTimer, QSize, QStandardPaths
 from PyQt5.QtGui import QImage
 from PyQt5.QtQuick import QQuickImageProvider
 
@@ -159,6 +159,17 @@ class ScreenRecorder(QObject):
     def height(self):
         return self._height
 
+    _scaleWidth = 0
+    _scaleHeight = 0
+
+    @pyqtProperty(int)
+    def scaleWidth(self):
+        return self._scaleWidth
+
+    @pyqtProperty(int)
+    def scaleHeight(self):
+        return self._scaleHeight
+
     _fame = None
 
     frameChanged = pyqtSignal()
@@ -177,14 +188,26 @@ class ScreenRecorder(QObject):
         self._fishboneConnector = FishboneConnector.instance()
         self._width = self._fishboneConnector.screenWidth
         self._height = self._fishboneConnector.screenHeight
+        if self._width == 1024:
+            self._scaleWidth = self._width * 7 / 8
+            self._scaleHeight = self._height * 7 / 8
+        elif self._width == 1280:
+            self._scaleWidth = self._width * 3 / 4
+            self._scaleHeight = self._height  * 3 / 4
+        else:
+            self._scaleWidth = self._width
+            self._scaleHeight = self._height
+        print(self._scaleWidth, self._scaleHeight)
         self._recorder = VideoRecorder.instance()
         self._recorder.frameChanged.connect(self.onFrameChanged)
 
     @pyqtSlot()
     def start(self):
+        filename = QStandardPaths.writableLocation(QStandardPaths.MoviesLocation)
+        filename += "/bigeye-video-{}".format(datetime.now().strftime("%Y%m%d%H%M%S"))
         self._recorder.setFrameRate(5)
         self._recorder.setResolution(self._width, self._height)
-        self._recorder.setFilename("bigeye-video-{}".format(datetime.now().strftime("%Y%m%d%H%M%S")))
+        self._recorder.setFilename(filename)
         self._recorder.start()
 
     @pyqtSlot()

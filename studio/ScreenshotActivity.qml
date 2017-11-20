@@ -38,50 +38,42 @@ Pane {
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
 
-        Image {
+        Rectangle {
             id: snip
-            width: 800
-            height: 600
-            source: screenshot.image
-            visible: false
+            border.color: "white"
+            border.width: 5
+            width: image.sourceSize.width
+            height: image.sourceSize.height
             anchors.centerIn: screen
-            Behavior on width {
-                NumberAnimation { duration: 2000 }
-            }
-            Behavior on height {
-                NumberAnimation { duration: 2000 }
-            }
-            onWidthChanged: {
-                if (width == 600)
-                    visible = false
+            visible: false
+            Image {
+                id: image
+                width: sourceSize.width - snip.border.width
+                height: sourceSize.height - snip.border.width
+                source: screenshot.image
+                anchors.centerIn: parent
             }
         }
 
-        NumberAnimation {
-            id: animateWidth
-            target: snip
-            properties: "width"
-            from: 800
-            to: 600
-            duration: 200
-        }
-        NumberAnimation {
-            id: animateHeight
-            target: snip
-            properties: "height"
-            from: 600
-            to: 500
-            duration: 200
+        SequentialAnimation {
+            id: shutterAnimation
+            PropertyAction { target: shutter; property: "enabled"; value: false }
+            PropertyAction { target: shutter; property: "visible"; value: false }
+            PropertyAction { target: snip; property: "visible"; value: true }
+            NumberAnimation { target: snip; property: "scale"; from: 1.0; to: 0.9; duration: 200 }
+            PauseAnimation { duration: 800 }
+            PropertyAction { target: snip; property: "visible"; value: false }
+            PropertyAction { target: shutter; property: "visible"; value: true }
+            PropertyAction { target: shutter; property: "enabled"; value: true }
         }
 
         IconButton {
+            id: shutter
             text: "snapshot"
             icon: "images/shutter.png"
             opacity: 0.4
             onPressed: {
-                animateWidth.start()
-                animateHeight.start()
-                snip.visible = true
+                shutterAnimation.running = true
                 screenshot.save()
             }
             onHoveredChanged: {
@@ -94,12 +86,13 @@ Pane {
 
             anchors.horizontalCenter: screen.horizontalCenter
             anchors.bottom: screen.bottom
-            anchors.bottomMargin: (screen.height - screenshot.height) / 2 + 32
+            anchors.bottomMargin: (screen.height - screenshot.scaleHeight) / 2 + 32
 
             background: Item { }
         }
     }
 
+    /*
     RowLayout {
         width: screen.width
         anchors.top: screen.bottom
@@ -131,4 +124,5 @@ Pane {
             saveToDirectory.text = saveToDialog.fileUrl
         }
     }
+    */
 }

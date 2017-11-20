@@ -19,14 +19,22 @@
 
 import QtQuick 2.7
 
-Item {
-    width: 800
-    height: 600
-    property int scaleWidth: 800
-    property int scaleHeight: 600
-    property string image: "images/screenshot.png"
+ListModel {
+    id: model
 
-    function save() {
-        console.log("Snip a screenshot")
+    ListElement {
+       name: "/cfgdir/save0"
+    }
+
+    ListElement {
+       name: "/cfgdir/save1"
+    }
+
+    ListElement {
+       name: "/cfgdir/save3"
+    }
+
+    function add(name) {
+        model.append({"name": name})
     }
 }

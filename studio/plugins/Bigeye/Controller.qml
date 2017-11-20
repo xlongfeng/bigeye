@@ -23,9 +23,14 @@ import Bigeye 1.0
 Item {
     id: controller
 
+    property FileListModel fileListModel: FileListModel { }
+
     property KeyEventModel model: KeyEventModel { }
 
     property int timestamp: 0
+
+    property int screenWidth: 800
+    property int screenHeight: 600
 
     property string preview: "images/screenshot.png"
 

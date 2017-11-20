@@ -33,6 +33,7 @@ from testcasemodel import *
 from keyeventmodel import *
 from processmodel import *
 from controller import *
+from miscellany import *
 
 
 if __name__ == '__main__':
@@ -46,11 +47,15 @@ if __name__ == '__main__':
     qmlRegisterType(TestCaseModel, "Bigeye", 1, 0, "TestCaseModel")
     qmlRegisterType(KeyEventModel, "Bigeye", 1, 0, "KeyEventModel")
     qmlRegisterType(ProcessModel, "Bigeye", 1, 0, "ProcessModel")
+
     qmlRegisterType(Controller, "Bigeye", 1, 0, "Controller")
     qmlRegisterType(AutomaticController, "Bigeye", 1, 0, "AutomaticController")
     qmlRegisterType(ReplayController, "Bigeye", 1, 0, "ReplayController")
+
     qmlRegisterType(Screenshot, "Bigeye", 1, 0, "Screenshot")
     qmlRegisterType(ScreenRecorder, "Bigeye", 1, 0, "ScreenRecorder")
+
+    qmlRegisterType(Miscellany, "Bigeye", 1, 0, "Miscellany")
 
     engine = QQmlApplicationEngine()
     engine.addImageProvider('snapshot', SnapshotProvider())

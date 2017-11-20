@@ -24,7 +24,7 @@
 
 from datetime import datetime
 
-from PyQt5.QtCore import Qt, QObject, QMutex, QSize, QTimer
+from PyQt5.QtCore import Qt, QObject, QMutex, QSize, QTimer, QStandardPaths
 from PyQt5.QtGui import QImage
 from PyQt5.QtQuick import QQuickImageProvider
 
@@ -33,8 +33,6 @@ from fishbone import *
 
 
 class Snapshot(RepeaterDelegate):
-    _mutex = QMutex()
-
     _width = 0
     _height = 0
     _bitdepth = 0
@@ -83,18 +81,14 @@ class Snapshot(RepeaterDelegate):
 
     def onExtendedDataArrived(self, category, data):
         if category == 'snapshot':
-            self._mutex.lock()
             self.image = QImage(data, self._width,
                                 self._height, QImage.Format_RGB16)
-            self._mutex.unlock()
             return True
         else:
             return False
 
     def save(self, filename):
-        self._mutex.lock()
         self.image.save(filename)
-        self._mutex.unlock()
 
 
 class SnapshotProvider(QQuickImageProvider):
@@ -130,6 +124,17 @@ class Screenshot(QObject):
     def height(self):
         return self._height
 
+    _scaleWidth = 0
+    _scaleHeight = 0
+
+    @pyqtProperty(int)
+    def scaleWidth(self):
+        return self._scaleWidth
+
+    @pyqtProperty(int)
+    def scaleHeight(self):
+        return self._scaleHeight
+
     _image = None
 
     imageChanged = pyqtSignal()
@@ -148,6 +153,15 @@ class Screenshot(QObject):
         self._fishboneConnector = FishboneConnector.instance()
         self._width = self._fishboneConnector.screenWidth
         self._height = self._fishboneConnector.screenHeight
+        if self._width == 1024:
+            self._scaleWidth = self._width * 7 / 8
+            self._scaleHeight = self._height * 7 / 8
+        elif self._width == 1280:
+            self._scaleWidth = self._width * 3 / 4
+            self._scaleHeight = self._height  * 3 / 4
+        else:
+            self._scaleWidth = self._width
+            self._scaleHeight = self._height
         self._snapshot = Snapshot.instance()
         self._snapshot.setResolution(self._width, self._height)
         self._snapshot.imageChanged.connect(self.onImageChanged)
@@ -161,7 +175,9 @@ class Screenshot(QObject):
 
     @pyqtSlot()
     def save(self):
-        self._snapshot.save("bigeye-screenshot-{}.png".format(datetime.now().strftime("%Y%m%d%H%M%S")))
+        filename = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
+        filename += "/bigeye-screenshot-{}.png".format(datetime.now().strftime("%Y%m%d%H%M%S"))
+        self._snapshot.save(filename)
 
     @pyqtSlot()
     def onImageChanged(self):

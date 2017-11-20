@@ -19,14 +19,23 @@
 
 import QtQuick 2.7
 
-Item {
-    width: 800
-    height: 600
-    property int scaleWidth: 800
-    property int scaleHeight: 600
-    property string image: "images/screenshot.png"
+QtObject {
+    id: controller
 
-    function save() {
-        console.log("Snip a screenshot")
+    property var consoleOptions: ["Close", "TTL to RS232", "USB to RS232"]
+    property int consoleIndex: 1
+    property var screenResolutionOptions: ["800x480", "800x600", "1024x768", "1280x800", "1280x1024"]
+    property int screenResolutionIndex: 3
+
+    function  unitTest() {
+        console.log("Launch unit test")
+    }
+
+    function reboot() {
+        console.log("System reboot ...")
+    }
+
+    function poweroff() {
+        console.log("System poweroff ...")
     }
 }

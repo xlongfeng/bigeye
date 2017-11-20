@@ -53,19 +53,63 @@ Pane {
         }
 
         ColumnLayout {
-
-            CpuInfoFragment {
+            GroupBox {
+                title: qsTr("CPU Usage")
+                CpuInfoFragment {
+                    anchors.fill: parent
+                }
                 Layout.fillWidth: true
                 Layout.minimumHeight: 160
             }
 
-            ProcessInfoFragment {
+            GroupBox {
+                title: qsTr("Processes")
+                ProcessInfoFragment {
+                    anchors.fill: parent
+                }
                 Layout.fillWidth: true
                 Layout.minimumHeight: 240
             }
 
-            KeyLoggerView {
-                model: controller.model
+            GroupBox {
+                label: Label {
+                    text: qsTr("Saved File List")
+                    rightPadding: 32
+                    Button {
+                        id: editButton
+                        anchors {
+                            right: parent.right
+                            verticalCenter: parent.verticalCenter
+                        }
+                        contentItem: Image {
+                            source: "images/add.png"
+                            sourceSize: "16x16"
+                        }
+                        background: Rectangle {
+                            radius: 5
+                            color: editButton.pressed ? "gray" : editButton.hovered ? "	lightgray" : "transparent"
+                        }
+
+                        onClicked: {
+                            fileList.addFile()
+                        }
+                    }
+                }
+                FileListFragment {
+                    id: fileList
+                    model: controller.fileListModel
+                    anchors.fill: parent
+                }
+                Layout.fillWidth: true
+                Layout.minimumHeight: 160
+            }
+
+            GroupBox {
+                title: qsTr("Keystroke Logger")
+                KeyLoggerView {
+                    model: controller.model
+                    anchors.fill: parent
+                }
                 Layout.fillWidth: true
                 Layout.fillHeight: true
             }

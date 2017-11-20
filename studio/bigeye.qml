@@ -222,7 +222,7 @@ ApplicationWindow {
         addLauncher("Screenshot", "Screen capture for all-purpose", Qt.resolvedUrl("images/camera.png"), Qt.resolvedUrl("ScreenshotActivity.qml"));
         addLauncher("System Monitor", "Supervise system status", Qt.resolvedUrl("images/system.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
         addLauncher("File Browser", "Filesystem Management", Qt.resolvedUrl("images/file-browser.png"), Qt.resolvedUrl("SystemMonitorActivity.qml"));
-        addLauncher("Miscellaneous", "Handy tools and commands", Qt.resolvedUrl("images/miscellaneous.png"), Qt.resolvedUrl("MiscellaneousActivity.qml"));
+        addLauncher("Miscellaneous Tools", "Handy tools and commands", Qt.resolvedUrl("images/miscellany.png"), Qt.resolvedUrl("MiscellanyActivity.qml"));
     }
 
     Dialog {

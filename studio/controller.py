@@ -25,7 +25,7 @@
 from datetime import datetime
 from random import choice
 
-from PyQt5.QtCore import pyqtProperty, pyqtSlot, QObject, QTimer
+from PyQt5.QtCore import pyqtProperty, pyqtSlot, QObject, QTimer, QStringListModel
 
 from fishbone import *
 from orm import *
@@ -35,6 +35,42 @@ from process import *
 from filetransfer import *
 from snapshot import *
 from video import *
+
+
+class FileListModel(QStringListModel):
+    NameRole = Qt.UserRole + 1
+
+    _roles = {NameRole: b"name"}
+
+    def __init__(self, parent=None):
+        super(FileListModel, self).__init__(parent)
+        self._fileList = []
+
+    @pyqtSlot(str)
+    def add(self, name):
+        if name not in self._fileList:
+            self._fileList.append(name)
+            self.setStringList(self._fileList)
+
+    @pyqtSlot(int)
+    def remove(self, index):
+        print(index, type(index))
+        del self._fileList[index]
+        self.setStringList(self._fileList)
+
+    def data(self, index, role=Qt.DisplayRole):
+        try:
+            filename = self._fileList[index.row()]
+        except IndexError:
+            return QVariant()
+
+        if role == self.NameRole:
+            return filename
+
+        return QVariant()
+
+    def roleNames(self):
+        return self._roles
 
 
 class Controller(QObject):
@@ -50,6 +86,17 @@ class Controller(QObject):
         self._model = model
         self.modelChanged.emit()
 
+    _screenWidth = 0
+    _screenHeight = 0
+
+    @pyqtProperty(int)
+    def screenWidth(self):
+        return self._screenWidth
+
+    @pyqtProperty(int)
+    def screenHeight(self):
+        return self._screenHeight
+
     previewChanged = pyqtSignal()
     _preview = None
 
@@ -61,6 +108,18 @@ class Controller(QObject):
     def preview(self, source):
         self._preview = source
         self.previewChanged.emit()
+
+    fileListModelChanged = pyqtSignal()
+    _fileListModel = None
+
+    @pyqtProperty(FileListModel, notify=fileListModelChanged)
+    def fileListModel(self):
+        return self._fileListModel
+
+    @fileListModel.setter
+    def fileListModel(self, source):
+        self._fileListModel = source
+        self.fileListModelChanged.emit()
     
     def __init__(self, parent=None):
         super(Controller, self).__init__(parent)
@@ -68,6 +127,17 @@ class Controller(QObject):
         self._startTime = None
 
         self._fishboneConnector = FishboneConnector.instance()
+        self._screenWidth = self._fishboneConnector.screenWidth
+        self._screenHeight = self._fishboneConnector.screenHeight
+        if self._screenWidth == 1024:
+            self._screenWidth = self._screenWidth * 7 / 8
+            self._screenHeight = self._screenHeight * 7 / 8
+        elif self._screenWidth == 1280:
+            self._screenWidth = self._screenWidth * 3 / 4
+            self._screenHeight = self._screenHeight  * 3 / 4
+        else:
+            self._screenWidth = self._screenWidth
+            self._screenHeight = self._screenHeight
 
         self._keyEvent = KeyEvent.instance()
 
@@ -75,6 +145,7 @@ class Controller(QObject):
         self._videoRecorder.frameChanged.connect(self.onPreviewChanged)
 
         self.model = KeyEventModel(self)
+        self.fileListModel = FileListModel(self)
 
     @pyqtSlot(str, str)
     def start(self, name, category):
@@ -85,11 +156,11 @@ class Controller(QObject):
         self._startTime = datetime.now()
         self._model.clear()
 
-        self._videoRecorder.setFrameRate(5)
+        self._videoRecorder.setFrameRate(2)
         self._videoRecorder.setResolution(
             self._fishboneConnector.screenWidth,
             self._fishboneConnector.screenHeight)
-        self._videoRecorder.setFilename(str(self._testCaseId))
+        self._videoRecorder.setFilename("data/videos/" + str(self._testCaseId))
         self._videoRecorder.start()
     
     @pyqtSlot()
@@ -166,8 +237,8 @@ class AutomaticController(Controller):
 
 
 class ReplayController(Controller):
-    replayModelChanged = pyqtSignal()
     _replayModel = None
+    replayModelChanged = pyqtSignal()
 
     @pyqtProperty(KeyEventModel, notify=replayModelChanged)
     def replayModel(self):
@@ -180,9 +251,8 @@ class ReplayController(Controller):
 
     _replayTestCase = None
     _replayKeyEvents = None
-    _replayKeyEventIndex = -1
-    _replayTestCaseId = None
 
+    _replayKeyEventIndex = -1
     replayKeyEventIndexChanged = pyqtSignal()
 
     @pyqtProperty(int, notify=replayKeyEventIndexChanged)
@@ -194,6 +264,7 @@ class ReplayController(Controller):
         self._replayKeyEventIndex = index
         self.replayKeyEventIndexChanged.emit()
 
+    _replayTestCaseId = None
     replayTestCaseIdChanged = pyqtSignal()
 
     @pyqtProperty(int, notify=replayTestCaseIdChanged)
@@ -217,6 +288,66 @@ class ReplayController(Controller):
         self._testCaseName = name
         self.testCaseNameChanged.emit()
 
+    _repeatTimes = 0
+    repeatTimesChanged = pyqtSignal()
+
+    @pyqtProperty(int, notify=repeatTimesChanged)
+    def repeatTimes(self):
+        return self._repeatTimes
+
+    @repeatTimes.setter
+    def repeatTimes(self, value):
+        self._repeatTimes = value
+        self.repeatTimesChanged.emit()
+
+    _intervalTime = 0
+    intervalTimeChanged = pyqtSignal()
+
+    @pyqtProperty(int, notify=intervalTimeChanged)
+    def intervalTime(self):
+        return self._intervalTime
+
+    @intervalTime.setter
+    def intervalTime(self, value):
+        self._intervalTime = value
+        self.intervalTimeChanged.emit()
+
+    _loopCounter = 0
+    loopCounterChanged = pyqtSignal()
+
+    @pyqtProperty(int, notify=loopCounterChanged)
+    def loopCounter(self):
+        return self._loopCounter
+
+    @loopCounter.setter
+    def loopCounter(self, value):
+        self._loopCounter = value
+        self.loopCounterChanged.emit()
+
+    _rebootOption = False
+    rebootOptionChanged = pyqtSignal()
+
+    @pyqtProperty(bool, notify=rebootOptionChanged)
+    def rebootOption(self):
+        return self._rebootOption
+
+    @rebootOption.setter
+    def rebootOption(self, value):
+        self._rebootOption = value
+        self.rebootOptionChanged.emit()
+        
+    _restoreOption = False
+    restoreOptionChanged = pyqtSignal()
+
+    @pyqtProperty(bool, notify=restoreOptionChanged)
+    def restoreOption(self):
+        return self._restoreOption
+
+    @restoreOption.setter
+    def restoreOption(self, value):
+        self._restoreOption = value
+        self.restoreOptionChanged.emit()
+
     def __init__(self, parent=None):
         super(ReplayController, self).__init__(parent)
         self._replayModel = KeyEventModel(self)
@@ -225,6 +356,10 @@ class ReplayController(Controller):
         self._replayTimer.setSingleShot(True)
         self._replayTimer.timeout.connect(self.replayKeyReport)
         self._replayKeyEvent = None
+
+        self._intervalTimer = QTimer(self)
+        self._intervalTimer.setSingleShot(True)
+        self._intervalTimer.timeout.connect(self.nextCycle)
 
     @pyqtSlot()
     def onReplayTestCaseIdChanged(self):
@@ -236,6 +371,8 @@ class ReplayController(Controller):
     @pyqtSlot(str, str)
     def start(self, name, category):
         super().start(name, category)
+        print(self.repeatTimes, self.intervalTime, self.rebootOption, self.restoreOption)
+        self.loopCounter = 1
         self.replayKeyEventIndex = -1
         self.nextReplayKeyReport()
 
@@ -252,9 +389,17 @@ class ReplayController(Controller):
     def nextReplayKeyReport(self):
         self.replayKeyEventIndex += 1
         if self.replayKeyEventIndex == len(self._replayTestCase.key_event_list):
-            print("replay complete")
             self.replayKeyEventIndex = -1
             self._replayKeyEvent = None
+            if self.intervalTime != self.loopCounter:
+                if self.restoreOption:
+                    print("restore request")
+                if self.rebootOption:
+                    print("reboot request")
+                    Process.instance().execute('reboot')
+                self._intervalTimer.start(self.intervalTime * 1000)
+            else:
+                print("replay is done")
             return
         if self._replayKeyEvent is not None:
             lastKeyEvent = self._replayKeyEvent
@@ -264,3 +409,10 @@ class ReplayController(Controller):
             self._replayKeyEvent = self._replayKeyEvents[self.replayKeyEventIndex]
             timestamp = self._replayKeyEvent.timestamp
         self._replayTimer.start(timestamp)
+
+    def nextCycle(self):
+        # waiting for client connecting
+        self.loopCounter += 1
+        self.replayKeyEventIndex = -1
+        self.nextReplayKeyReport()
+
