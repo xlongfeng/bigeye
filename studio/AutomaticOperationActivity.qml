@@ -53,13 +53,38 @@ Pane {
         }
 
         ColumnLayout {
-            GroupBox {
-                title: qsTr("CPU Usage")
-                CpuUsageFragment {
-                    anchors.fill: parent
+            RowLayout {
+                GroupBox {
+                    title: qsTr("CPU")
+                    CpuStatFragment {
+                        anchors.fill: parent
+                        model: controller.cpuModel
+                    }
+                    Layout.fillWidth: true
+
+                    Layout.fillHeight: true
+                }
+                GroupBox {
+                    title: qsTr("Memory")
+                    MemoryInfoFragment {
+                        controller: controller
+                        anchors.fill: parent
+                    }
+                    Layout.preferredWidth: 144
+                    Layout.fillHeight: true
+                }
+                GroupBox {
+                    title: qsTr("Disk")
+                    DiskVolumeFragment {
+                        controller: controller
+                        anchors.fill: parent
+                    }
+                    Layout.preferredWidth: 144
+                    Layout.fillHeight: true
                 }
                 Layout.fillWidth: true
                 Layout.minimumHeight: 160
+                Layout.maximumHeight: 160
             }
 
             GroupBox {
