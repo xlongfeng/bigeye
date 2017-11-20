@@ -26,6 +26,14 @@
 #include "bigeyelinker.h"
 
 
+typedef struct jiffy_counts_t {
+    /* Linux 2.4.x has only first four */
+    unsigned long long usr, nic, sys, idle;
+    unsigned long long iowait, irq, softirq, steal;
+    unsigned long long total;
+    unsigned long long busy;
+} jiffy_counts_t;
+
 class Daemon : public Bigeye
 {
     Q_OBJECT
@@ -45,6 +53,9 @@ private slots:
     void videoFrame(QDataStream &stream);
     void executeProgram(QDataStream &stream);
     void executeRemoteProgram(QDataStream &stream);
+    void getCpuStat(QDataStream &stream);
+    void getMemInfo(QDataStream &stream);
+    void getDiskVolume(QDataStream &stream);
     void fileTransferPut(QDataStream &stream);
     void fileTransferGet(QDataStream &stream);
     void setOption(QDataStream &stream);
@@ -53,8 +64,16 @@ private slots:
 private:
     void sendExtendedData(const QString &category, QByteArray &buffer);
 
+    int read_cpu_jiffy(FILE *fp, jiffy_counts_t *p_jif);
+    void get_jiffy_counts();
+
 private:
     BigeyeLinker *linker;
+
+    jiffy_counts_t prev_jif;
+    jiffy_counts_t cur_jif;
+    jiffy_counts_t *cpu_jif, *cpu_prev_jif;
+    const int num_cpus;
 };
 
 #endif // DAEMON_H
