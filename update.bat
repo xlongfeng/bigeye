@@ -1,3 +1,3 @@
 git fetch
-git checkout origin/master .
+git checkout origin/HEAD
 pyrcc5 -o studio/bigeye_rc.py studio/bigeye.qrc
