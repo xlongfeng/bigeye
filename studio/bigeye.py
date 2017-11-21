@@ -60,6 +60,11 @@ if __name__ == '__main__':
     engine = QQmlApplicationEngine()
     engine.addImageProvider('snapshot', SnapshotProvider())
     engine.addImageProvider('video', VideoProvider())
-    engine.load(QUrl.fromLocalFile(os.path.join(os.path.dirname(__file__), 'bigeye.qml')))
+
+    if 'noqrc' in sys.argv:
+        engine.load(QUrl.fromLocalFile(os.path.join(os.path.dirname(__file__), 'bigeye.qml')))
+    else:
+        import bigeye_rc
+        engine.load(QUrl("qrc:/bigeye.qml"))
     
     sys.exit(app.exec_())
