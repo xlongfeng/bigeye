@@ -373,6 +373,14 @@ class Controller(QObject):
         self._testCaseId = None
 
     @pyqtSlot()
+    def screenshot(self):
+        if self._testCaseId is None:
+            return
+        filename = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
+        filename += "/bigeye-screenshot-{}.png".format(datetime.now().strftime("%Y%m%d%H%M%S"))
+        self._videoRecorder.save(filename)
+
+    @pyqtSlot()
     def onSysInfoUpdate(self):
         self._cpuStat.query()
         self._memInfo.query()

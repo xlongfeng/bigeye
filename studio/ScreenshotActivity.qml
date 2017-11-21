@@ -33,63 +33,10 @@ Pane {
     }
 
     MonitorScreen {
-        id: screen
         source: screenshot.image
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
-
-        Rectangle {
-            id: snip
-            border.color: "white"
-            border.width: 5
-            width: image.sourceSize.width
-            height: image.sourceSize.height
-            anchors.centerIn: screen
-            visible: false
-            Image {
-                id: image
-                width: sourceSize.width - snip.border.width
-                height: sourceSize.height - snip.border.width
-                source: screenshot.image
-                anchors.centerIn: parent
-            }
-        }
-
-        SequentialAnimation {
-            id: shutterAnimation
-            PropertyAction { target: shutter; property: "enabled"; value: false }
-            PropertyAction { target: shutter; property: "visible"; value: false }
-            PropertyAction { target: snip; property: "visible"; value: true }
-            NumberAnimation { target: snip; property: "scale"; from: 1.0; to: 0.9; duration: 200 }
-            PauseAnimation { duration: 800 }
-            PropertyAction { target: snip; property: "visible"; value: false }
-            PropertyAction { target: shutter; property: "visible"; value: true }
-            PropertyAction { target: shutter; property: "enabled"; value: true }
-        }
-
-        IconButton {
-            id: shutter
-            text: "snapshot"
-            icon: "images/shutter.png"
-            opacity: 0.4
-            onPressed: {
-                shutterAnimation.running = true
-                screenshot.save()
-            }
-            onHoveredChanged: {
-                if (hovered) {
-                    opacity = 0.8
-                } else {
-                    opacity = 0.4
-                }
-            }
-
-            anchors.horizontalCenter: screen.horizontalCenter
-            anchors.bottom: screen.bottom
-            anchors.bottomMargin: (screen.height - screenshot.scaleHeight) / 2 + 32
-
-            background: Item { }
-        }
+        controller: screenshot
     }
 
     /*

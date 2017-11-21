@@ -41,7 +41,7 @@ Pane {
 
         MonitorScreen {
             id: screen
-            source: controller.preview
+            controller: controller
 
             Label {
                 id: loopCounter

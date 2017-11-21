@@ -70,6 +70,8 @@ class VideoRecorder(RepeaterDelegate):
         self._frame = frame
         self.frameChanged.emit()
 
+    _filename = None
+
     def __init__(self, parent=None):
         super(VideoRecorder, self).__init__(parent)
         self._timer = QTimer(self)
@@ -84,6 +86,9 @@ class VideoRecorder(RepeaterDelegate):
         if category == 'videoFrame' and self._timer.isActive():
             image = QImage(data, self._width,
                            self._height, QImage.Format_RGB16)
+            if self._filename:
+                image.save(self._filename)
+                self._filename = None
             self.frame = image
             bits = image.bits()
             bits.setsize(image.byteCount())
@@ -120,6 +125,9 @@ class VideoRecorder(RepeaterDelegate):
 
     def resume(self):
         self._timer.start()
+
+    def save(self, filename):
+        self._filename = filename
 
 
 class VideoPlayer(SingletonObject):

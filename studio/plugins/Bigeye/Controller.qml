@@ -99,6 +99,10 @@ Item {
         }
     }
 
+    function screenshot() {
+        console.log("Snip a screenshot")
+    }
+
     function start(name, category) {
         console.log("Start Test Case:%1 %2".arg(name).arg(category))
         model.clear()
