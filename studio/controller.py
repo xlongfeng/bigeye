@@ -328,20 +328,6 @@ class Controller(QObject):
         self.cpuModel = CpuModel(self)
         self.systemInfoHistoryModel = SystemInfoHistoryModel(self)
 
-        self._keyEvent = KeyEvent.instance()
-
-        self._videoRecorder = VideoRecorder.instance()
-        self._videoRecorder.frameChanged.connect(self.onPreviewChanged)
-
-        self.model = KeyEventModel(self)
-        self.fileListModel = FileListModel(self)
-
-    @pyqtSlot(str, str)
-    def start(self, name, category):
-        testcase = TestCase(name=name, category=category, timestamp=datetime.now())
-        session.add(testcase)
-        session.commit()
-
         self._cpuStat = CpuStat.instance()
         self._cpuStat.cpuStatChanged.connect(self.onCpuStatChanged)
 
@@ -355,27 +341,44 @@ class Controller(QObject):
         self._systemInfoUpdateTimer.timeout.connect(self.onSysInfoUpdate)
         self._systemInfoUpdateTimer.start(1000)
 
-        self._testCaseId = testcase.id
-        self._startTime = datetime.now()
-        self._model.clear()
+        self._keyEvent = KeyEvent.instance()
 
+        self._videoRecorder = VideoRecorder.instance()
+        self._videoRecorder.frameChanged.connect(self.onPreviewChanged)
+
+        self.model = KeyEventModel(self)
+        self.fileListModel = FileListModel(self)
+
+    def startVideo(self, filename):
         self._videoRecorder.setFrameRate(2)
         self._videoRecorder.setResolution(
             self._fishboneConnector.screenWidth,
             self._fishboneConnector.screenHeight)
-        self._videoRecorder.setFilename("data/videos/" + str(self._testCaseId))
+        self._videoRecorder.setFilename(filename)
         self._videoRecorder.start()
+
+    def stopVideo(self):
+        self._videoRecorder.stop()
+
+    @pyqtSlot(str, str)
+    def start(self, name, category):
+        testcase = TestCase(name=name, category=category, timestamp=datetime.now())
+        session.add(testcase)
+        session.commit()
+
+        self._testCaseId = testcase.id
+        self._startTime = datetime.now()
+        self._model.clear()
+
+        self.startVideo("data/videos/" + str(self._testCaseId))
     
     @pyqtSlot()
     def stop(self):
-        self._systemInfoUpdateTimer.stop()
-        self._videoRecorder.stop()
+        self.stopVideo()
         self._testCaseId = None
 
     @pyqtSlot()
     def screenshot(self):
-        if self._testCaseId is None:
-            return
         filename = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
         filename += "/bigeye-screenshot-{}.png".format(datetime.now().strftime("%Y%m%d%H%M%S"))
         self._videoRecorder.save(filename)
@@ -388,8 +391,6 @@ class Controller(QObject):
 
     @pyqtSlot()
     def onCpuStatChanged(self):
-        if self._testCaseId is None:
-            return
         index = 0
         for stat in self._cpuStat.stats:
             self.cpuModel.setCpuUsage(index, stat[3])
@@ -398,8 +399,6 @@ class Controller(QObject):
 
     @pyqtSlot()
     def onMemInfoChanged(self):
-        if self._testCaseId is None:
-            return
         self.memTotal = self._memInfo.mtotal
         self.memFree = self._memInfo.mfree
         self._systemInfoHistoryModel.setMemoryUsage(self._memInfo.mfree * 100 / self._memInfo.mtotal)
@@ -407,8 +406,6 @@ class Controller(QObject):
 
     @pyqtSlot()
     def onDiskVolumnChanged(self):
-        if self._testCaseId is None:
-            return
         self.diskVolumeTotal = self._diskVolume.mtotal
         self.diskVolumeFree = self._diskVolume.mfree
         self._systemInfoHistoryModel.setDiskUsage(self._diskVolume.mfree * 100 / self._diskVolume.mtotal)
@@ -428,6 +425,17 @@ class Controller(QObject):
     @pyqtSlot()
     def onPreviewChanged(self):
         self.preview = "image://video/timestamp=" + str(datetime.now().timestamp())
+
+
+class LiteController(Controller):
+    def __init__(self, parent=None):
+        super(LiteController, self).__init__(parent)
+        filename = QStandardPaths.writableLocation(QStandardPaths.MoviesLocation)
+        filename += "/bigeye-video-{}".format(datetime.now().strftime("%Y%m%d%H%M%S"))
+        self.startVideo(filename)
+
+    def __del__(self):
+        self.stopVideo()
 
 
 class AutomaticController(Controller):

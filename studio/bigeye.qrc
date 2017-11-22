@@ -71,5 +71,8 @@
         <file>TestCaseActivity.qml</file>
         <file>TestCaseDelegate.qml</file>
         <file>VideoRecorderActivity.qml</file>
+        <file>bigeye-lite.qml</file>
+        <file>SupervisorLiteActivity.qml</file>
+        <file>SupervisorLitePanelFragment.qml</file>
     </qresource>
 </RCC>

@@ -49,6 +49,7 @@ if __name__ == '__main__':
     qmlRegisterType(ProcessModel, "Bigeye", 1, 0, "ProcessModel")
 
     qmlRegisterType(Controller, "Bigeye", 1, 0, "Controller")
+    qmlRegisterType(LiteController, "Bigeye", 1, 0, "LiteController")
     qmlRegisterType(AutomaticController, "Bigeye", 1, 0, "AutomaticController")
     qmlRegisterType(ReplayController, "Bigeye", 1, 0, "ReplayController")
 
@@ -61,10 +62,12 @@ if __name__ == '__main__':
     engine.addImageProvider('snapshot', SnapshotProvider())
     engine.addImageProvider('video', VideoProvider())
 
+    bigeyeQml = "bigeye-lite.qml" if 'lite' in sys.argv else "bigeye.qml"
+
     if 'noqrc' in sys.argv:
-        engine.load(QUrl.fromLocalFile(os.path.join(os.path.dirname(__file__), 'bigeye.qml')))
+        engine.load(QUrl.fromLocalFile(os.path.join(os.path.dirname(__file__), bigeyeQml)))
     else:
         import bigeye_rc
-        engine.load(QUrl("qrc:/bigeye.qml"))
+        engine.load(QUrl("qrc:/" + bigeyeQml))
     
     sys.exit(app.exec_())

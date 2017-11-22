@@ -4,6 +4,7 @@ FileListModel 1.0 FileListModel.qml
 TestCaseModel 1.0 TestCaseModel.qml
 KeyEventModel 1.0 KeyEventModel.qml
 Controller 1.0 Controller.qml
+LiteController 1.0 LiteController.qml
 AutomaticController 1.0 AutomaticController.qml
 ReplayController 1.0 ReplayController.qml
 Screenshot 1.0 Screenshot.qml
