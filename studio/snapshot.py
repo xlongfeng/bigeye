@@ -75,14 +75,18 @@ class Snapshot(RepeaterDelegate):
         self._width = width
         self._height = height
         self._image = QImage(QSize(width, height), QImage.Format_RGB16)
+        self._nextFrame = True
 
     def take(self):
-        block, ostream = self._repeater.getRequestBlock()
-        ostream.writeQString('snapshot')
-        self._repeater.submitRequestBlock(block)
+        if self._nextFrame:
+            self._nextFrame = False
+            block, ostream = self._repeater.getRequestBlock()
+            ostream.writeQString('snapshot')
+            self._repeater.submitRequestBlock(block)
 
     def onExtendedDataArrived(self, category, data):
         if category == 'snapshot':
+            self._nextFrame = True
             self.image = QImage(data, self._width,
                                 self._height, QImage.Format_RGB16)
             if self._filename:

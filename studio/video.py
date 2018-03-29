@@ -78,12 +78,15 @@ class VideoRecorder(RepeaterDelegate):
         self._timer.timeout.connect(self.onFetchVideoFrame)
 
     def onFetchVideoFrame(self):
-        block, ostream = self._repeater.getRequestBlock()
-        ostream.writeQString('videoFrame')
-        self._repeater.submitRequestBlock(block)
+        if self._nextFrame:
+            self._nextFrame = False
+            block, ostream = self._repeater.getRequestBlock()
+            ostream.writeQString('videoFrame')
+            self._repeater.submitRequestBlock(block)
 
     def onExtendedDataArrived(self, category, data):
         if category == 'videoFrame' and self._timer.isActive():
+            self._nextFrame = True
             image = QImage(data, self._width,
                            self._height, QImage.Format_RGB16)
             if self._filename:
@@ -105,6 +108,7 @@ class VideoRecorder(RepeaterDelegate):
     def setResolution(self, width, height):
         self._width = width
         self._height = height
+        self._nextFrame = True
 
     def setFilename(self, filename):
         self._filename = filename
@@ -114,6 +118,7 @@ class VideoRecorder(RepeaterDelegate):
         fourcc = cv2.VideoWriter_fourcc(*'X264')
         self._videoWriter = cv2.VideoWriter(self._filename + '.avi',
                                             fourcc, self._rate, (self._width, self._height))
+        self._nextFrame = True
         self._timer.start(1000 / self._rate)
 
     def stop(self):
